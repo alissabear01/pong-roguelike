@@ -1,0 +1,17 @@
+# Godot 4+ engine cache and imported resources
+.godot/
+/android/
+
+# Godot builds
+build/
+export_presets.cfg
+*.translation
+
+# Mono/C#
+.mono/
+data_*/
+mono_crash.*.json
+
+# System
+.DS_Store
+Thumbs.db
