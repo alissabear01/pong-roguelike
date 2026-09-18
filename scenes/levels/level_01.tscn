@@ -3,6 +3,7 @@
 [ext_resource type="Texture2D" uid="uid://crylvfh1u4ayo" path="res://assets/sprites/spritesheet_base.png" id="1_2djvx"]
 [ext_resource type="TileSet" uid="uid://dt48y5mhho7y1" path="res://assets/wall_tileset.tres" id="1_m802k"]
 [ext_resource type="PackedScene" uid="uid://b0exohm7j1qtb" path="res://scenes/entities/ball.tscn" id="2_i2aat"]
+[ext_resource type="PackedScene" uid="uid://bq2p7m6yxk3ne" path="res://scenes/player.tscn" id="3_player"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_53g83"]
 atlas = ExtResource("1_2djvx")
@@ -32,5 +33,8 @@ tile_set = ExtResource("1_m802k")
 
 [node name="Ball" parent="." unique_id=1614160530 instance=ExtResource("2_i2aat")]
 position = Vector2(40, 15)
+
+[node name="Player" parent="." unique_id=1590231784 instance=ExtResource("3_player")]
+position = Vector2(0, 68)
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1704816652]
