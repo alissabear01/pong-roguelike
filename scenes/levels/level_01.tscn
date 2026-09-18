@@ -1,0 +1,40 @@
+[gd_scene format=4 uid="uid://gagswo18xels"]
+
+[ext_resource type="Texture2D" uid="uid://crylvfh1u4ayo" path="res://assets/sprites/spritesheet_base.png" id="1_2djvx"]
+[ext_resource type="TileSet" uid="uid://dt48y5mhho7y1" path="res://assets/wall_tileset.tres" id="1_m802k"]
+[ext_resource type="PackedScene" uid="uid://b0exohm7j1qtb" path="res://scenes/entities/ball.tscn" id="2_i2aat"]
+[ext_resource type="PackedScene" uid="uid://bq2p7m6yxk3ne" path="res://scenes/player.tscn" id="3_player"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_53g83"]
+atlas = ExtResource("1_2djvx")
+region = Rect2(0, 32, 16, 16)
+
+[node name="Level01" type="Node2D" unique_id=1880736447]
+
+[node name="Background" type="CanvasLayer" parent="." unique_id=1974552376]
+layer = -1
+
+[node name="TextureRect" type="TextureRect" parent="Background" unique_id=1991639920]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -563.0
+offset_top = -301.0
+offset_right = 116.0
+offset_bottom = 81.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = SubResource("AtlasTexture_53g83")
+stretch_mode = 1
+
+[node name="Walls" type="TileMapLayer" parent="." unique_id=1680140106]
+tile_map_data = PackedByteArray("AAD2//n/AAAAAAAAAAD3//n/AAAAAAAAAAD4//n/AAAAAAAAAAD5//n/AAAAAAAAAAD6//n/AAAAAAAAAAD7//n/AAAAAAAAAAD8//n/AAAAAAAAAAD9//n/AAAAAAAAAAD+//n/AAAAAAAAAAD///n/AAAAAAAAAAAAAPn/AAAAAAAAAAABAPn/AAAAAAAAAAACAPn/AAAAAAAAAAADAPn/AAAAAAAAAAAEAPn/AAAAAAAAAAAFAPn/AAAAAAAAAAAGAPn/AAAAAAAAAAAHAPn/AAAAAAAAAAAIAPn/AAAAAAAAAAAJAPn/AAAAAAAAAAAKAPn/AAAAAAAAAAD2/wUAAAAAAAAAAAD3/wUAAAAAAAAAAAD4/wUAAAAAAAAAAAD5/wUAAAAAAAAAAAD6/wUAAAAAAAAAAAD7/wUAAAAAAAAAAAD8/wUAAAAAAAAAAAD9/wUAAAAAAAAAAAD+/wUAAAAAAAAAAAD//wUAAAAAAAAAAAAAAAUAAAAAAAAAAAABAAUAAAAAAAAAAAACAAUAAAAAAAAAAAADAAUAAAAAAAAAAAAEAAUAAAAAAAAAAAAFAAUAAAAAAAAAAAAGAAUAAAAAAAAAAAAHAAUAAAAAAAAAAAAIAAUAAAAAAAAAAAAJAAUAAAAAAAAAAAAKAAUAAAAAAAAAAAD1//n/AAAAAAAAAAD1//r/AAAAAAAAAAD1//v/AAAAAAAAAAD1//z/AAAAAAAAAAD1//3/AAAAAAAAAAD1//7/AAAAAAAAAAD1////AAAAAAAAAAD1/wAAAAAAAAAAAAD1/wEAAAAAAAAAAAD1/wIAAAAAAAAAAAD1/wMAAAAAAAAAAAD1/wQAAAAAAAAAAAD1/wUAAAAAAAAAAAAKAAQAAAAAAAAAAAAKAAMAAAAAAAAAAAAKAAIAAAAAAAAAAAAKAAEAAAAAAAAAAAAKAAAAAAAAAAAAAAAKAP//AAAAAAAAAAAKAP7/AAAAAAAAAAAKAP3/AAAAAAAAAAAKAPz/AAAAAAAAAAAKAPv/AAAAAAAAAAAKAPr/AAAAAAAAAAA=")
+tile_set = ExtResource("1_m802k")
+
+[node name="Ball" parent="." unique_id=1614160530 instance=ExtResource("2_i2aat")]
+position = Vector2(40, 15)
+
+[node name="Player" parent="." unique_id=1590231784 instance=ExtResource("3_player")]
+position = Vector2(0, 68)
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1704816652]
