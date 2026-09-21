@@ -18,3 +18,8 @@ func _physics_process(delta: float) -> void:
 	if collision:
 		# get_normal() is direction the suface faces. bounce() reflects our velocity off it
 		velocity = velocity.bounce(collision.get_normal())
+		
+		# if it was something breakable, damage it
+		var hit = collision.get_collider()
+		if hit.has_method("take_damage"):
+			hit.take_damage()

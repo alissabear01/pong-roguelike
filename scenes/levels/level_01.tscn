@@ -3,6 +3,8 @@
 [ext_resource type="Texture2D" uid="uid://crylvfh1u4ayo" path="res://assets/sprites/spritesheet_base.png" id="1_2djvx"]
 [ext_resource type="TileSet" uid="uid://dt48y5mhho7y1" path="res://assets/wall_tileset.tres" id="1_m802k"]
 [ext_resource type="PackedScene" uid="uid://b0exohm7j1qtb" path="res://scenes/entities/ball.tscn" id="2_i2aat"]
+[ext_resource type="PackedScene" uid="uid://b3yi6g6ckte20" path="res://scenes/entities/slime.tscn" id="4_uvc87"]
+[ext_resource type="PackedScene" uid="uid://c70m32q6x4qlj" path="res://scenes/entities/skeleton.tscn" id="5_qdh5e"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_53g83"]
 atlas = ExtResource("1_2djvx")
@@ -34,3 +36,9 @@ tile_set = ExtResource("1_m802k")
 position = Vector2(40, 15)
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1704816652]
+
+[node name="Enemy" parent="." unique_id=440440417 instance=ExtResource("4_uvc87")]
+position = Vector2(0, -3)
+
+[node name="Skeleton" parent="." unique_id=799151108 instance=ExtResource("5_qdh5e")]
+position = Vector2(88, 23)
