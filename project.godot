@@ -11,9 +11,26 @@ config_version=5
 [application]
 
 config/name="Pong Roguelike"
-run/main_scene="res://scenes/main.tscn"
+run/main_scene="uid://gagswo18xels"
 config/features=PackedStringArray("4.7", "Forward Plus")
 
 [display]
 
+window/size/viewport_width=480
+window/size/viewport_height=270
+window/size/window_width_override=1920
+window/size/window_height_override=1080
 window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[layer_names]
+
+2d_physics/layer_1="walls"
+2d_physics/layer_2="ball"
+2d_physics/layer_3="paddle"
+2d_physics/layer_4="bricks"
+2d_physics/layer_5="pickups"
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0
