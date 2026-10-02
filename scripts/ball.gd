@@ -28,6 +28,10 @@ func _physics_process(delta: float) -> void:
 		# get_normal() is direction the suface faces. bounce() reflects our velocity off it
 		velocity = velocity.bounce(collision.get_normal())
 
+		# if it was something breakable, damage it
+		if collider.has_method("take_damage"):
+			collider.take_damage()
+
 # Breakout-style aiming: where the ball lands on the paddle picks the angle it leaves at.
 # Centre sends it straight up, the edges send it out at max_bounce_angle.
 func _bounce_off_paddle(paddle: Player) -> Vector2:
