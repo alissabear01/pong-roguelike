@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://coq3or72pjtm1"]
+
+[ext_resource type="Script" uid="uid://xhscywe415hq" path="res://scenes/entities/enemy.gd" id="1_67neu"]
+
+[node name="Enemy" type="StaticBody2D" unique_id=440440417]
+script = ExtResource("1_67neu")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=2144103570]
+hframes = 4
+vframes = 4
+frame = 1
