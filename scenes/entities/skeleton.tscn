@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://c70m32q6x4qlj"]
+
+[ext_resource type="PackedScene" uid="uid://coq3or72pjtm1" path="res://scenes/entities/enemy.tscn" id="1_883aw"]
+[ext_resource type="Texture2D" uid="uid://crylvfh1u4ayo" path="res://assets/sprites/spritesheet_base.png" id="2_k8hju"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_53g83"]
+size = Vector2(9.5, 24)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_vibb2"]
+size = Vector2(3, 24)
+
+[node name="Skeleton" unique_id=440440417 instance=ExtResource("1_883aw")]
+max_health = 4
+
+[node name="Sprite2D" parent="." index="0" unique_id=2144103570]
+texture = ExtResource("2_k8hju")
+hframes = 1
+vframes = 1
+frame = 0
+region_enabled = true
+region_rect = Rect2(48.712452, 18.581623, 13.52195, 28.708134)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." index="1" unique_id=1055568517]
+position = Vector2(1.25, 2)
+shape = SubResource("RectangleShape2D_53g83")
+
+[node name="Shield" type="StaticBody2D" parent="." index="2" unique_id=1637452055]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Shield" index="0" unique_id=581678958]
+position = Vector2(-5, 2)
+shape = SubResource("RectangleShape2D_vibb2")
