@@ -1,6 +1,9 @@
 extends StaticBody2D
 # breakable (killable!) enemy. takes dmg when the ball hits it and dies at 0 health
 
+signal damaged
+signal defeated
+
 ## how many hits this enemy survives. set per-instance in the inspector
 @export var max_health: int = 1
 
@@ -16,6 +19,7 @@ func _ready() -> void:
 ## called by ball when it collides with this enemy
 func take_damage(amount: int = 1) -> void:
 	health -= amount
+	damaged.emit()
 	print("hit, health now: ",health)
 	if health <= 0:
 		die()
@@ -35,5 +39,13 @@ func shake() -> void:
 	tween.tween_property(sprite, "position", start, 0.015)
 
 func die() -> void:
-	# queue_free() removes the node safely at the end of the frame
-	queue_free()
+	defeated.emit()
+	set_deferred("collision_layer", 0)
+	set_deferred("collision_mask", 0)
+
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(sprite, "scale", Vector2(1.5, 0.2), 0.16)
+	tween.tween_property(sprite, "modulate:a", 0.0, 0.16)
+	tween.set_parallel(false)
+	tween.tween_callback(queue_free)

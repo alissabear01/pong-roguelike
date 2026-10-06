@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scenes/entities/upgrade_chest.gd" id="1_chest_script"]
+[ext_resource type="Texture2D" uid="uid://crylvfh1u4ayo" path="res://assets/sprites/spritesheet_base.png" id="2_sprites"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_chest"]
+size = Vector2(40, 12)
+
+[node name="UpgradeChest" type="StaticBody2D"]
+script = ExtResource("1_chest_script")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_sprites")
+hframes = 4
+vframes = 4
+frame = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_chest")

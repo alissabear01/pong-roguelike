@@ -6,12 +6,15 @@
 [ext_resource type="PackedScene" uid="uid://bq2p7m6yxk3ne" path="res://scenes/player.tscn" id="3_player"]
 [ext_resource type="PackedScene" uid="uid://b3yi6g6ckte20" path="res://scenes/entities/slime.tscn" id="4_uvc87"]
 [ext_resource type="PackedScene" uid="uid://c70m32q6x4qlj" path="res://scenes/entities/skeleton.tscn" id="5_qdh5e"]
+[ext_resource type="Script" path="res://scripts/level_01.gd" id="8_level_script"]
+[ext_resource type="PackedScene" path="res://scenes/entities/upgrade_chest.tscn" id="9_upgrade_chest"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_53g83"]
 atlas = ExtResource("1_2djvx")
 region = Rect2(0, 32, 16, 16)
 
 [node name="Level01" type="Node2D" unique_id=1880736447]
+script = ExtResource("8_level_script")
 
 [node name="Background" type="CanvasLayer" parent="." unique_id=1974552376]
 layer = -1
@@ -39,6 +42,9 @@ position = Vector2(40, 15)
 [node name="Player" parent="." unique_id=1590231784 instance=ExtResource("3_player")]
 position = Vector2(0, 68)
 
+[node name="UpgradeChest" parent="." instance=ExtResource("9_upgrade_chest")]
+position = Vector2(40, 38)
+
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1704816652]
 
 [node name="Enemy" parent="." unique_id=440440417 instance=ExtResource("4_uvc87")]
@@ -46,3 +52,98 @@ position = Vector2(0, -3)
 
 [node name="Skeleton" parent="." unique_id=799151108 instance=ExtResource("5_qdh5e")]
 position = Vector2(88, 23)
+
+[node name="HUD" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="TopBar" type="ColorRect" parent="HUD"]
+offset_right = 480.0
+offset_bottom = 25.0
+color = Color(0.035, 0.047, 0.071, 0.88)
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="HUD/TopBar"]
+offset_left = 10.0
+offset_top = 4.0
+offset_right = 160.0
+offset_bottom = 22.0
+theme_override_colors/font_color = Color(0.98, 0.33, 0.63, 1)
+theme_override_font_sizes/font_size = 12
+text = "PONG ROGUELIKE"
+
+[node name="Score" type="Label" parent="HUD/TopBar"]
+offset_left = 175.0
+offset_top = 4.0
+offset_right = 305.0
+offset_bottom = 22.0
+theme_override_colors/font_color = Color(1, 0.92, 0.55, 1)
+theme_override_font_sizes/font_size = 12
+text = "SCORE  0000"
+horizontal_alignment = 1
+
+[node name="Enemies" type="Label" parent="HUD/TopBar"]
+offset_left = 320.0
+offset_top = 4.0
+offset_right = 470.0
+offset_bottom = 22.0
+theme_override_colors/font_color = Color(0.55, 0.95, 0.91, 1)
+theme_override_font_sizes/font_size = 12
+text = "ENEMIES  2"
+horizontal_alignment = 2
+
+[node name="MessageBand" type="ColorRect" parent="HUD"]
+offset_top = 96.0
+offset_right = 480.0
+offset_bottom = 174.0
+color = Color(0.025, 0.031, 0.05, 0.9)
+mouse_filter = 2
+
+[node name="Accent" type="ColorRect" parent="HUD/MessageBand"]
+offset_top = 0.0
+offset_right = 480.0
+offset_bottom = 2.0
+color = Color(0.98, 0.33, 0.63, 1)
+mouse_filter = 2
+
+[node name="Message" type="Label" parent="HUD/MessageBand"]
+offset_top = 13.0
+offset_right = 480.0
+offset_bottom = 46.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 22
+text = "PONG ROGUELIKE"
+horizontal_alignment = 1
+
+[node name="Prompt" type="Label" parent="HUD/MessageBand"]
+offset_top = 49.0
+offset_right = 480.0
+offset_bottom = 70.0
+theme_override_colors/font_color = Color(1, 0.92, 0.55, 1)
+theme_override_font_sizes/font_size = 11
+text = "SPACE TO LAUNCH"
+horizontal_alignment = 1
+
+[node name="UpgradeNotice" type="ColorRect" parent="HUD"]
+visible = false
+offset_left = 115.0
+offset_top = 218.0
+offset_right = 365.0
+offset_bottom = 246.0
+color = Color(0.035, 0.047, 0.071, 0.94)
+mouse_filter = 2
+
+[node name="Accent" type="ColorRect" parent="HUD/UpgradeNotice"]
+offset_right = 3.0
+offset_bottom = 28.0
+color = Color(1, 0.76, 0.2, 1)
+mouse_filter = 2
+
+[node name="Upgrade" type="Label" parent="HUD/UpgradeNotice"]
+offset_left = 8.0
+offset_top = 5.0
+offset_right = 244.0
+offset_bottom = 24.0
+theme_override_colors/font_color = Color(1, 0.92, 0.55, 1)
+theme_override_font_sizes/font_size = 11
+text = "QUICK BALL  +25% SPEED"
+horizontal_alignment = 1

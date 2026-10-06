@@ -1,9 +1,13 @@
+class_name Ball
 extends CharacterBody2D
 ## The ball, moves at a constant speed & reflects off any surface it hits
 ## uses CharacterBody2D rather than RigidBody2D so we control the exact velocity vector
 
 ## ball speed in pixels per s, can tweak in inspector
 @export var speed: float = 300.0
+
+## how much damage the ball deals to enemies and upgrade chests
+@export var damage: int = 1
 
 ## how far from straight-up (in degrees) the ball is sent when it hits the very edge of the paddle
 @export var max_bounce_angle: float = 60.0
@@ -30,7 +34,7 @@ func _physics_process(delta: float) -> void:
 
 		# if it was something breakable, damage it
 		if collider.has_method("take_damage"):
-			collider.take_damage()
+			collider.take_damage(damage)
 
 # Breakout-style aiming: where the ball lands on the paddle picks the angle it leaves at.
 # Centre sends it straight up, the edges send it out at max_bounce_angle.
@@ -41,3 +45,19 @@ func _bounce_off_paddle(paddle: Player) -> Vector2:
 
 	var angle := deg_to_rad(max_bounce_angle) * hit_offset
 	return Vector2.UP.rotated(angle) * speed
+
+
+func apply_upgrade(upgrade: StringName) -> String:
+	match upgrade:
+		&"speed":
+			speed *= 1.25
+			velocity = velocity.normalized() * speed
+			return "QUICK BALL  +25% SPEED"
+		&"size":
+			scale *= 1.25
+			return "GIANT BALL  +25% SIZE"
+		&"power":
+			damage += 1
+			return "POWER BALL  +1 DAMAGE"
+
+	return ""
