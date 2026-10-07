@@ -1,6 +1,9 @@
 extends StaticBody2D
 # breakable (killable!) enemy. takes dmg when the ball hits it and dies at 0 health
 
+## fires the moment health hits 0, so the level can count down what's left
+signal died
+
 ## how many hits this enemy survives. set per-instance in the inspector
 @export var max_health: int = 1
 
@@ -35,5 +38,6 @@ func shake() -> void:
 	tween.tween_property(sprite, "position", start, 0.015)
 
 func die() -> void:
+	died.emit()
 	# queue_free() removes the node safely at the end of the frame
 	queue_free()

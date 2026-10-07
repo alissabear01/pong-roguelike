@@ -14,6 +14,11 @@ config/name="Pong Roguelike"
 run/main_scene="uid://gagswo18xels"
 config/features=PackedStringArray("4.7", "Forward Plus")
 
+[autoload]
+
+Transition="*res://scenes/ui/transition.tscn"
+LevelManager="*res://scripts/level_manager.gd"
+
 [display]
 
 window/size/viewport_width=480
