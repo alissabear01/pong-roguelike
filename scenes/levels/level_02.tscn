@@ -1,0 +1,56 @@
+[gd_scene format=3 uid="uid://dnx4k2pvq8rlb"]
+
+[ext_resource type="Script" uid="uid://cljbacryihmix" path="res://scripts/level.gd" id="1_level"]
+[ext_resource type="Texture2D" uid="uid://crylvfh1u4ayo" path="res://assets/sprites/spritesheet_base.png" id="2_2djvx"]
+[ext_resource type="TileSet" uid="uid://dt48y5mhho7y1" path="res://assets/wall_tileset.tres" id="3_m802k"]
+[ext_resource type="PackedScene" uid="uid://b0exohm7j1qtb" path="res://scenes/entities/ball.tscn" id="4_i2aat"]
+[ext_resource type="PackedScene" uid="uid://cd0kq054s76xk" path="res://scenes/player.tscn" id="5_player"]
+[ext_resource type="PackedScene" uid="uid://b3yi6g6ckte20" path="res://scenes/entities/slime.tscn" id="6_uvc87"]
+[ext_resource type="PackedScene" uid="uid://c70m32q6x4qlj" path="res://scenes/entities/skeleton.tscn" id="7_qdh5e"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_53g83"]
+atlas = ExtResource("2_2djvx")
+region = Rect2(0, 32, 16, 16)
+
+[node name="Level02" type="Node2D"]
+script = ExtResource("1_level")
+
+[node name="Background" type="CanvasLayer" parent="."]
+layer = -1
+
+[node name="TextureRect" type="TextureRect" parent="Background"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -563.0
+offset_top = -301.0
+offset_right = 116.0
+offset_bottom = 81.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = SubResource("AtlasTexture_53g83")
+stretch_mode = 1
+
+[node name="Walls" type="TileMapLayer" parent="."]
+tile_map_data = PackedByteArray("AAD2//n/AAAAAAAAAAD3//n/AAAAAAAAAAD4//n/AAAAAAAAAAD5//n/AAAAAAAAAAD6//n/AAAAAAAAAAD7//n/AAAAAAAAAAD8//n/AAAAAAAAAAD9//n/AAAAAAAAAAD+//n/AAAAAAAAAAD///n/AAAAAAAAAAAAAPn/AAAAAAAAAAABAPn/AAAAAAAAAAACAPn/AAAAAAAAAAADAPn/AAAAAAAAAAAEAPn/AAAAAAAAAAAFAPn/AAAAAAAAAAAGAPn/AAAAAAAAAAAHAPn/AAAAAAAAAAAIAPn/AAAAAAAAAAAJAPn/AAAAAAAAAAAKAPn/AAAAAAAAAAD2/wUAAAAAAAAAAAD3/wUAAAAAAAAAAAD4/wUAAAAAAAAAAAD5/wUAAAAAAAAAAAD6/wUAAAAAAAAAAAD7/wUAAAAAAAAAAAD8/wUAAAAAAAAAAAD9/wUAAAAAAAAAAAD+/wUAAAAAAAAAAAD//wUAAAAAAAAAAAAAAAUAAAAAAAAAAAABAAUAAAAAAAAAAAACAAUAAAAAAAAAAAADAAUAAAAAAAAAAAAEAAUAAAAAAAAAAAAFAAUAAAAAAAAAAAAGAAUAAAAAAAAAAAAHAAUAAAAAAAAAAAAIAAUAAAAAAAAAAAAJAAUAAAAAAAAAAAAKAAUAAAAAAAAAAAD1//n/AAAAAAAAAAD1//r/AAAAAAAAAAD1//v/AAAAAAAAAAD1//z/AAAAAAAAAAD1//3/AAAAAAAAAAD1//7/AAAAAAAAAAD1////AAAAAAAAAAD1/wAAAAAAAAAAAAD1/wEAAAAAAAAAAAD1/wIAAAAAAAAAAAD1/wMAAAAAAAAAAAD1/wQAAAAAAAAAAAD1/wUAAAAAAAAAAAAKAAQAAAAAAAAAAAAKAAMAAAAAAAAAAAAKAAIAAAAAAAAAAAAKAAEAAAAAAAAAAAAKAAAAAAAAAAAAAAAKAP//AAAAAAAAAAAKAP7/AAAAAAAAAAAKAP3/AAAAAAAAAAAKAPz/AAAAAAAAAAAKAPv/AAAAAAAAAAAKAPr/AAAAAAAAAAA=")
+tile_set = ExtResource("3_m802k")
+
+[node name="Ball" parent="." instance=ExtResource("4_i2aat")]
+position = Vector2(-60, 20)
+
+[node name="Player" parent="." instance=ExtResource("5_player")]
+position = Vector2(0, 68)
+
+[node name="Camera2D" type="Camera2D" parent="."]
+
+[node name="SlimeTop" parent="." instance=ExtResource("6_uvc87")]
+position = Vector2(0, -72)
+
+[node name="SlimeMid" parent="." instance=ExtResource("6_uvc87")]
+position = Vector2(0, -24)
+
+[node name="SkeletonLeft" parent="." instance=ExtResource("7_qdh5e")]
+position = Vector2(-70, -55)
+
+[node name="SkeletonRight" parent="." instance=ExtResource("7_qdh5e")]
+position = Vector2(70, -55)

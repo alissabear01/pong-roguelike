@@ -1,0 +1,25 @@
+[remap]
+
+importer="font_data_image"
+type="FontFile"
+uid="uid://ctlauuhgwgkec"
+path="res://.godot/imported/pixel_font.png-f2fa14b33a92f9fe5e61702176b2317e.fontdata"
+
+[deps]
+
+source_file="res://assets/fonts/pixel_font.png"
+dest_files=["res://.godot/imported/pixel_font.png-f2fa14b33a92f9fe5e61702176b2317e.fontdata"]
+
+[params]
+
+character_ranges=PackedStringArray("0x20-0x5f")
+kerning_pairs=PackedStringArray()
+columns=16
+rows=4
+image_margin=Rect2i(0, 0, 0, 0)
+character_margin=Rect2i(0, 0, 0, 0)
+ascent=7
+descent=1
+fallbacks=[]
+compress=true
+scaling_mode=1
