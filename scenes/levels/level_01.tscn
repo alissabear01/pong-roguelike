@@ -3,9 +3,10 @@
 [ext_resource type="Texture2D" uid="uid://crylvfh1u4ayo" path="res://assets/sprites/spritesheet_base.png" id="1_2djvx"]
 [ext_resource type="TileSet" uid="uid://dt48y5mhho7y1" path="res://assets/wall_tileset.tres" id="1_m802k"]
 [ext_resource type="PackedScene" uid="uid://b0exohm7j1qtb" path="res://scenes/entities/ball.tscn" id="2_i2aat"]
-[ext_resource type="PackedScene" uid="uid://bq2p7m6yxk3ne" path="res://scenes/player.tscn" id="3_player"]
+[ext_resource type="PackedScene" uid="uid://cd0kq054s76xk" path="res://scenes/player.tscn" id="3_player"]
 [ext_resource type="PackedScene" uid="uid://b3yi6g6ckte20" path="res://scenes/entities/slime.tscn" id="4_uvc87"]
 [ext_resource type="PackedScene" uid="uid://c70m32q6x4qlj" path="res://scenes/entities/skeleton.tscn" id="5_qdh5e"]
+[ext_resource type="Texture2D" uid="uid://c41g4lngkrrr7" path="res://assets/sprites/9slice.png" id="7_1ey3t"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_53g83"]
 atlas = ExtResource("1_2djvx")
@@ -46,3 +47,17 @@ position = Vector2(0, -3)
 
 [node name="Skeleton" parent="." unique_id=799151108 instance=ExtResource("5_qdh5e")]
 position = Vector2(88, 23)
+
+[node name="NinePatchRect" type="NinePatchRect" parent="." unique_id=981520776]
+visible = false
+offset_left = -130.0
+offset_top = -79.0
+offset_right = 136.0
+offset_bottom = 61.0
+texture = ExtResource("7_1ey3t")
+patch_margin_left = 8
+patch_margin_top = 8
+patch_margin_right = 8
+patch_margin_bottom = 8
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1

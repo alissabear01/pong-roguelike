@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://b3yi6g6ckte20"]
 
 [ext_resource type="PackedScene" uid="uid://coq3or72pjtm1" path="res://scenes/entities/enemy.tscn" id="1_10iln"]
+[ext_resource type="PackedScene" uid="uid://c11s71n4kvj1e" path="res://scenes/effects/slime_particles.tscn" id="2_0ftkj"]
 [ext_resource type="Texture2D" uid="uid://crylvfh1u4ayo" path="res://assets/sprites/spritesheet_base.png" id="2_5ax0t"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_53g83"]
@@ -8,6 +9,7 @@ radius = 7.0
 
 [node name="Slime" unique_id=440440417 instance=ExtResource("1_10iln")]
 max_health = 3
+death_effect = ExtResource("2_0ftkj")
 
 [node name="Sprite2D" parent="." index="0" unique_id=2144103570]
 texture = ExtResource("2_5ax0t")

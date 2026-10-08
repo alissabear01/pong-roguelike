@@ -1,0 +1,52 @@
+[gd_resource type="Theme" format=3 uid="uid://dbup0uh8npdk7"]
+
+[ext_resource type="Texture2D" uid="uid://bkgbnvhqo22ye" path="res://assets/sprites/9slice-button.png" id="1_7wdoa"]
+[ext_resource type="FontFile" uid="uid://bkea0hqb2rx3i" path="res://assets/fonts/DungeonFont.ttf" id="1_wf4hb"]
+[ext_resource type="Texture2D" uid="uid://dksvu0pcdi5me" path="res://assets/sprites/9slice-button-hover.png" id="2_rh63s"]
+[ext_resource type="Texture2D" uid="uid://y7yhx6vdtko6" path="res://assets/sprites/9slice-button-press.png" id="3_dir8o"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_rh63s"]
+texture = ExtResource("1_7wdoa")
+texture_margin_left = 8.0
+texture_margin_top = 8.0
+texture_margin_right = 8.0
+texture_margin_bottom = 8.0
+modulate_color = Color(0.5132329, 0.5132329, 0.5132329, 1)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_dir8o"]
+texture = ExtResource("1_7wdoa")
+texture_margin_left = 8.0
+texture_margin_top = 8.0
+texture_margin_right = 8.0
+texture_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_rv7sn"]
+texture = ExtResource("2_rh63s")
+texture_margin_left = 8.0
+texture_margin_top = 8.0
+texture_margin_right = 8.0
+texture_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_n3ym3"]
+texture = ExtResource("1_7wdoa")
+texture_margin_left = 8.0
+texture_margin_top = 8.0
+texture_margin_right = 8.0
+texture_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_7wdoa"]
+texture = ExtResource("3_dir8o")
+texture_margin_left = 8.0
+texture_margin_top = 8.0
+texture_margin_right = 8.0
+texture_margin_bottom = 8.0
+
+[resource]
+default_font = ExtResource("1_wf4hb")
+default_font_size = 32
+Button/colors/font_color = Color(0.36996588, 0.16870373, 0.07044374, 1)
+Button/styles/disabled = SubResource("StyleBoxTexture_rh63s")
+Button/styles/focus = SubResource("StyleBoxTexture_dir8o")
+Button/styles/hover = SubResource("StyleBoxTexture_rv7sn")
+Button/styles/normal = SubResource("StyleBoxTexture_n3ym3")
+Button/styles/pressed = SubResource("StyleBoxTexture_7wdoa")
