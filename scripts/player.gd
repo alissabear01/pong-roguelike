@@ -3,8 +3,14 @@ extends CharacterBody2D
 
 @export var speed := 200.0
 
-## half the paddle width, used by the ball to work out where along the paddle it hit
+## half the paddle size, used by the ball to work out where along the paddle it hit
 @onready var half_width: float = $CollisionShape2D.shape.size.x / 2
+@onready var half_height: float = $CollisionShape2D.shape.size.y / 2
+
+
+func _ready() -> void:
+	# lets the ball find us, so it can spot when we've slid over the top of it
+	add_to_group("player")
 
 
 func _physics_process(_delta: float) -> void:
