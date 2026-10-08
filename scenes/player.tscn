@@ -1,20 +1,20 @@
 [gd_scene format=3 uid="uid://cd0kq054s76xk"]
 
 [ext_resource type="Script" uid="uid://je4el4kjfhp" path="res://scripts/player.gd" id="1_player"]
+[ext_resource type="Texture2D" uid="uid://crylvfh1u4ayo" path="res://assets/sprites/spritesheet_base.png" id="2_g2els"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_paddle"]
-size = Vector2(48, 8)
+size = Vector2(40, 6)
 
 [node name="Player" type="CharacterBody2D" unique_id=1872048626]
 collision_layer = 4
+motion_mode = 1
 script = ExtResource("1_player")
-
-[node name="ColorRect" type="ColorRect" parent="." unique_id=1287594613]
-offset_left = -24.0
-offset_top = -4.0
-offset_right = 24.0
-offset_bottom = 4.0
-color = Color(0.8516215, 2.887845e-06, 0.43587616, 1)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=288452097]
 shape = SubResource("RectangleShape2D_paddle")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=17418870]
+texture = ExtResource("2_g2els")
+region_enabled = true
+region_rect = Rect2(3.7226963, 21.781084, 40.635185, 6.6569576)
