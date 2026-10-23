@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://c11s71n4kvj1e"]
+
+[ext_resource type="PackedScene" uid="uid://bqcaqtd4y7ybj" path="res://scenes/effects/death_particles.tscn" id="1_y4hku"]
+[ext_resource type="Texture2D" uid="uid://kriaqde1pr1s" path="res://assets/sprites/slime-particle-Sheet.png" id="2_5efcs"]
+
+[node name="DeathParticles" unique_id=367124500 instance=ExtResource("1_y4hku")]
+texture = ExtResource("2_5efcs")
