@@ -34,6 +34,14 @@ func shake() -> void:
 			start+ Vector2(randf_range(-1,1), randf_range(-1,1)), 0.015)
 	tween.tween_property(sprite, "position", start, 0.015)
 
+@export var death_effect: PackedScene
+
 func die() -> void:
+	print("die called, effect is: ", death_effect)
+	if death_effect:
+		var fx:= death_effect.instantiate()
+		# add to the level, not to self - about to self destruct......
+		get_parent().add_child(fx)
+		fx.global_position= global_position
 	# queue_free() removes the node safely at the end of the frame
 	queue_free()

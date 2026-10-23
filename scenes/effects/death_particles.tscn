@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://bqcaqtd4y7ybj"]
+
+[ext_resource type="Script" uid="uid://b267kq7qpl6wk" path="res://scripts/death_particles.gd" id="1_33ewb"]
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_biuys"]
+particles_animation = true
+particles_anim_h_frames = 4
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_iyh3d"]
+particle_flag_disable_z = true
+direction = Vector3(0, -1, 0)
+spread = 180.0
+initial_velocity_min = 40.0
+initial_velocity_max = 90.0
+gravity = Vector3(0, 200, 0)
+damping_min = 20.0
+damping_max = 40.0
+scale_max = 2.0
+anim_offset_max = 1.0
+
+[node name="DeathParticles" type="GPUParticles2D" unique_id=367124500]
+material = SubResource("CanvasItemMaterial_biuys")
+emitting = false
+amount = 10
+lifetime = 0.5
+one_shot = true
+explosiveness = 1.0
+process_material = SubResource("ParticleProcessMaterial_iyh3d")
+script = ExtResource("1_33ewb")
