@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://cd0kq054s76xk" path="res://scenes/player.tscn" id="3_player"]
 [ext_resource type="PackedScene" uid="uid://b3yi6g6ckte20" path="res://scenes/entities/slime.tscn" id="4_uvc87"]
 [ext_resource type="PackedScene" uid="uid://c70m32q6x4qlj" path="res://scenes/entities/skeleton.tscn" id="5_qdh5e"]
+[ext_resource type="Script" uid="uid://cljbacryihmix" path="res://scripts/level.gd" id="6_level"]
 [ext_resource type="AudioStream" path="res://assets/audio/background_loop.wav" id="6_music"]
 [ext_resource type="Script" path="res://scripts/background_music.gd" id="7_music_script"]
 [ext_resource type="Texture2D" uid="uid://c41g4lngkrrr7" path="res://assets/sprites/9slice.png" id="7_1ey3t"]
@@ -15,6 +16,7 @@ atlas = ExtResource("1_2djvx")
 region = Rect2(0, 32, 16, 16)
 
 [node name="Level01" type="Node2D" unique_id=1880736447]
+script = ExtResource("6_level")
 
 [node name="Background" type="CanvasLayer" parent="." unique_id=1974552376]
 layer = -1

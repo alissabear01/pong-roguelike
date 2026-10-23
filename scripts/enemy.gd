@@ -1,6 +1,9 @@
 extends StaticBody2D
 # breakable (killable!) enemy. takes dmg when the ball hits it and dies at 0 health
 
+## fires the moment health hits 0, so the level can count down what's left
+signal died
+
 ## how many hits this enemy survives. set per-instance in the inspector
 @export var max_health: int = 1
 
@@ -37,6 +40,7 @@ func shake() -> void:
 @export var death_effect: PackedScene
 
 func die() -> void:
+	died.emit()
 	print("die called, effect is: ", death_effect)
 	if death_effect:
 		var fx:= death_effect.instantiate()
