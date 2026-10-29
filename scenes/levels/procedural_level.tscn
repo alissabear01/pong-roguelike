@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://c70m32q6x4qlj" path="res://scenes/entities/skeleton.tscn" id="7_qdh5e"]
 [ext_resource type="AudioStream" path="res://assets/audio/background_loop.wav" id="8_music"]
 [ext_resource type="Script" path="res://scripts/background_music.gd" id="9_music_script"]
+[ext_resource type="PackedScene" uid="uid://bcbugajgx5tir" path="res://scenes/entities/death_zone.tscn" id="10_death"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_53g83"]
 atlas = ExtResource("2_2djvx")
@@ -42,6 +43,8 @@ tile_set = ExtResource("3_m802k")
 [node name="Ball" parent="." instance=ExtResource("4_i2aat")]
 
 [node name="Player" parent="." instance=ExtResource("5_player")]
+
+[node name="DeathZone" parent="." instance=ExtResource("10_death")]
 
 [node name="Camera2D" type="Camera2D" parent="."]
 

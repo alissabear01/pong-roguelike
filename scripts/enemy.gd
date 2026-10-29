@@ -9,10 +9,37 @@ signal died
 
 var health: int
 
+## the area this enemy's whole body has to stay inside while it moves. the
+## level sets it before adding the enemy. left empty, the enemy stands still
+var move_bounds: Rect2
+
+## where the enemy was placed. any moving it does is around this spot
+var home: Vector2
+
 func _ready() -> void:
 	health = max_health
+	home = position
 	# group lets the level count how many enemies are left
 	add_to_group("enemies")
+
+## true if the whole body would be inside move_bounds with its centre at pos
+func _fits_at(pos: Vector2) -> bool:
+	if not move_bounds.has_area():
+		return false
+	var body := _body_rect()
+	body.position += pos
+	return move_bounds.encloses(body)
+
+## box around every collision shape (the skeleton's shield too), relative to
+## our position. mirrored left/right so it holds whichever way we face
+func _body_rect() -> Rect2:
+	var rect := Rect2()
+	for shape: CollisionShape2D in find_children("*", "CollisionShape2D", true, false):
+		var r := shape.shape.get_rect()
+		r.position += to_local(shape.global_position)
+		var mirrored := Rect2(-r.end.x, r.position.y, r.size.x, r.size.y)
+		rect = r.merge(mirrored) if not rect.has_area() else rect.merge(r).merge(mirrored)
+	return rect
 
 @onready var sprite:Sprite2D = $Sprite2D
 

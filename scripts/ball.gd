@@ -10,6 +10,9 @@ extends CharacterBody2D
 ## how far from straight-up (in degrees) the ball is sent when it hits the very edge of the paddle
 @export var max_bounce_angle: float = 60.0
 
+## which way the ball heads on launch (give or take 45 degrees). points at the paddle
+var launch_direction := Vector2.DOWN
+
 # where the level placed the ball, so we can put it back after a lost life
 var _start_position: Vector2
 
@@ -20,9 +23,17 @@ func _ready() -> void:
 	_start_position = global_position
 	launch()
 
-## picks random launch angle between 45 & 135 degrees so ball goes downwardish & adds velocity -- can change later
+## for levels that place the ball after it has spawned: moves it, remembers the
+## spot for respawns and relaunches it toward the paddle
+func set_start(pos: Vector2, direction: Vector2) -> void:
+	_start_position = pos
+	global_position = pos
+	launch_direction = direction
+	launch()
+
+## picks a random launch angle within 45 degrees of launch_direction & adds velocity
 func launch() -> void:
-	var angle := randf_range(PI * 0.25, PI * 0.75)
+	var angle := launch_direction.angle() + randf_range(-PI * 0.25, PI * 0.25)
 	velocity = Vector2.RIGHT.rotated(angle) * speed
 
 ## puts the ball back at its start, holds it still for a moment, then relaunches
@@ -54,9 +65,6 @@ func _physics_process(delta: float) -> void:
 # Breakout-style aiming: where the ball lands on the paddle picks the angle it leaves at.
 # Centre sends it straight up, the edges send it out at max_bounce_angle.
 func _bounce_off_paddle(paddle: Player) -> Vector2:
-	# -1 at the paddle's left edge, 0 in the middle, +1 at the right edge
-	var hit_offset := (global_position.x - paddle.global_position.x) / paddle.half_width
-	hit_offset = clampf(hit_offset, -1.0, 1.0)
-
-	var angle := deg_to_rad(max_bounce_angle) * hit_offset
-	return Vector2.UP.rotated(angle) * speed
+	# the paddle can sit on any wall and bend round corners, so it works out
+	# which way its face points where we hit it
+	return paddle.bounce_direction(global_position, deg_to_rad(max_bounce_angle)) * speed
