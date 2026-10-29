@@ -7,9 +7,10 @@
 [ext_resource type="PackedScene" uid="uid://b3yi6g6ckte20" path="res://scenes/entities/slime.tscn" id="4_uvc87"]
 [ext_resource type="PackedScene" uid="uid://c70m32q6x4qlj" path="res://scenes/entities/skeleton.tscn" id="5_qdh5e"]
 [ext_resource type="Script" uid="uid://cljbacryihmix" path="res://scripts/level.gd" id="6_level"]
-[ext_resource type="AudioStream" path="res://assets/audio/background_loop.wav" id="6_music"]
-[ext_resource type="Script" path="res://scripts/background_music.gd" id="7_music_script"]
+[ext_resource type="AudioStream" uid="uid://b0phl2kldo75c" path="res://assets/audio/background_loop.wav" id="6_music"]
 [ext_resource type="Texture2D" uid="uid://c41g4lngkrrr7" path="res://assets/sprites/9slice.png" id="7_1ey3t"]
+[ext_resource type="Script" uid="uid://c35ml0m6b50g5" path="res://scripts/background_music.gd" id="7_music_script"]
+[ext_resource type="PackedScene" uid="uid://bcbugajgx5tir" path="res://scenes/entities/death_zone.tscn" id="11_ijn0p"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_53g83"]
 atlas = ExtResource("1_2djvx")
@@ -35,7 +36,7 @@ texture = SubResource("AtlasTexture_53g83")
 stretch_mode = 1
 
 [node name="Walls" type="TileMapLayer" parent="." unique_id=1680140106]
-tile_map_data = PackedByteArray("AAD2//n/AAAAAAAAAAD3//n/AAAAAAAAAAD4//n/AAAAAAAAAAD5//n/AAAAAAAAAAD6//n/AAAAAAAAAAD7//n/AAAAAAAAAAD8//n/AAAAAAAAAAD9//n/AAAAAAAAAAD+//n/AAAAAAAAAAD///n/AAAAAAAAAAAAAPn/AAAAAAAAAAABAPn/AAAAAAAAAAACAPn/AAAAAAAAAAADAPn/AAAAAAAAAAAEAPn/AAAAAAAAAAAFAPn/AAAAAAAAAAAGAPn/AAAAAAAAAAAHAPn/AAAAAAAAAAAIAPn/AAAAAAAAAAAJAPn/AAAAAAAAAAAKAPn/AAAAAAAAAAD2/wUAAAAAAAAAAAD3/wUAAAAAAAAAAAD4/wUAAAAAAAAAAAD5/wUAAAAAAAAAAAD6/wUAAAAAAAAAAAD7/wUAAAAAAAAAAAD8/wUAAAAAAAAAAAD9/wUAAAAAAAAAAAD+/wUAAAAAAAAAAAD//wUAAAAAAAAAAAAAAAUAAAAAAAAAAAABAAUAAAAAAAAAAAACAAUAAAAAAAAAAAADAAUAAAAAAAAAAAAEAAUAAAAAAAAAAAAFAAUAAAAAAAAAAAAGAAUAAAAAAAAAAAAHAAUAAAAAAAAAAAAIAAUAAAAAAAAAAAAJAAUAAAAAAAAAAAAKAAUAAAAAAAAAAAD1//n/AAAAAAAAAAD1//r/AAAAAAAAAAD1//v/AAAAAAAAAAD1//z/AAAAAAAAAAD1//3/AAAAAAAAAAD1//7/AAAAAAAAAAD1////AAAAAAAAAAD1/wAAAAAAAAAAAAD1/wEAAAAAAAAAAAD1/wIAAAAAAAAAAAD1/wMAAAAAAAAAAAD1/wQAAAAAAAAAAAD1/wUAAAAAAAAAAAAKAAQAAAAAAAAAAAAKAAMAAAAAAAAAAAAKAAIAAAAAAAAAAAAKAAEAAAAAAAAAAAAKAAAAAAAAAAAAAAAKAP//AAAAAAAAAAAKAP7/AAAAAAAAAAAKAP3/AAAAAAAAAAAKAPz/AAAAAAAAAAAKAPv/AAAAAAAAAAAKAPr/AAAAAAAAAAA=")
+tile_map_data = PackedByteArray("AAD2//n/AAAAAAAAAAD3//n/AAAAAAAAAAD4//n/AAAAAAAAAAD5//n/AAAAAAAAAAD6//n/AAAAAAAAAAD7//n/AAAAAAAAAAD8//n/AAAAAAAAAAD9//n/AAAAAAAAAAD+//n/AAAAAAAAAAD///n/AAAAAAAAAAAAAPn/AAAAAAAAAAABAPn/AAAAAAAAAAACAPn/AAAAAAAAAAADAPn/AAAAAAAAAAAEAPn/AAAAAAAAAAAFAPn/AAAAAAAAAAAGAPn/AAAAAAAAAAAHAPn/AAAAAAAAAAAIAPn/AAAAAAAAAAAJAPn/AAAAAAAAAAAKAPn/AAAAAAAAAAD1//n/AAAAAAAAAAD1//r/AAAAAAAAAAD1//v/AAAAAAAAAAD1//z/AAAAAAAAAAD1//3/AAAAAAAAAAD1//7/AAAAAAAAAAD1////AAAAAAAAAAD1/wAAAAAAAAAAAAD1/wEAAAAAAAAAAAD1/wIAAAAAAAAAAAD1/wMAAAAAAAAAAAD1/wQAAAAAAAAAAAAKAAQAAAAAAAAAAAAKAAMAAAAAAAAAAAAKAAIAAAAAAAAAAAAKAAEAAAAAAAAAAAAKAAAAAAAAAAAAAAAKAP//AAAAAAAAAAAKAP7/AAAAAAAAAAAKAP3/AAAAAAAAAAAKAPz/AAAAAAAAAAAKAPv/AAAAAAAAAAAKAPr/AAAAAAAAAAA=")
 tile_set = ExtResource("1_m802k")
 
 [node name="Ball" parent="." unique_id=1614160530 instance=ExtResource("2_i2aat")]
@@ -44,7 +45,7 @@ position = Vector2(40, 15)
 [node name="Player" parent="." unique_id=1590231784 instance=ExtResource("3_player")]
 position = Vector2(0, 68)
 
-[node name="BackgroundMusic" type="AudioStreamPlayer" parent="."]
+[node name="BackgroundMusic" type="AudioStreamPlayer" parent="." unique_id=2123606710]
 stream = ExtResource("6_music")
 volume_db = -12.0
 autoplay = true
@@ -71,3 +72,6 @@ patch_margin_right = 8
 patch_margin_bottom = 8
 axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
+
+[node name="DeathZone" parent="." unique_id=1697295990 instance=ExtResource("11_ijn0p")]
+position = Vector2(16, 77)

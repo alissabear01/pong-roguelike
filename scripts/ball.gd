@@ -1,3 +1,5 @@
+class_name Ball
+
 extends CharacterBody2D
 ## The ball, moves at a constant speed & reflects off any surface it hits
 ## uses CharacterBody2D rather than RigidBody2D so we control the exact velocity vector
@@ -8,11 +10,26 @@ extends CharacterBody2D
 ## how far from straight-up (in degrees) the ball is sent when it hits the very edge of the paddle
 @export var max_bounce_angle: float = 60.0
 
-# runs when ball enters the scene
+# where the level placed the ball, so we can put it back after a lost life
+var _start_position: Vector2
+
+## runs when ball enters the scene
 func _ready() -> void:
-	# picks random launch angle between 45 & 135 degrees so ball goes downwardish & adds velocity -- can change later
+	_start_position = global_position
+	launch()
+
+## picks random launch angle between 45 & 135 degrees so ball goes downwardish & adds velocity -- can change later
+func launch() -> void:
 	var angle := randf_range(PI * 0.25, PI * 0.75)
 	velocity = Vector2.RIGHT.rotated(angle) * speed
+
+## puts the ball back at its start, holds it still for a moment, then relaunches
+func respawn() -> void:
+	global_position = _start_position
+	velocity = Vector2.ZERO
+	# short pause so the player can see where the ball is before it moves
+	await get_tree().create_timer(0.6).timeout
+	launch()
 
 # runs 60x per s on physics clock. movement is here
 func _physics_process(delta: float) -> void:

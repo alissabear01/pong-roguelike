@@ -30,16 +30,34 @@ func level_cleared() -> void:
 
 	# freeze the ball and paddle so nothing moves behind the banner
 	get_tree().paused = true
-
 	await Transition.show_banner("LEVEL CLEAR")
+	
+	# wrap back to the first level for now so run doesnt dead end
+	await _go_to_level((current_index +1 ) % LEVELS.size())
+	
+## Called by the death zone when the last life is lost
+func game_over() -> void:
+	if _changing:
+		return
+	_changing = true
+	
+	get_tree().paused = true
+	await Transition.show_banner("GAME OVER")
+	
+	# roguelike rules: a brand new run from the very first level
+	RunState.reset_run()
+	await _go_to_level(0)
+	
+# fades out, swaps to LEVELS[index], fades back in and unfreezes the game
+func _go_to_level(index: int) -> void:
 	await Transition.fade_out()
+	
+	current_index = index
 
-	# wrap back to the first level for now so the run never dead-ends
-	current_index = (current_index + 1) % LEVELS.size()
 	get_tree().change_scene_to_file(LEVELS[current_index])
-	# the swap happens at the end of the frame, so wait for the new tree
+	# the swap happppebs at the endof the frame, so wait for the new tree
 	await get_tree().process_frame
-
+	
 	await Transition.fade_in()
 	get_tree().paused = false
 	_changing = false

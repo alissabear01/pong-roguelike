@@ -16,6 +16,8 @@ config/features=PackedStringArray("4.7", "Forward Plus")
 
 [autoload]
 
+RunState="*uid://p428gauqgcip"
+Hud="*uid://dbl51foa1bx8s"
 Transition="*res://scenes/ui/transition.tscn"
 LevelManager="*res://scripts/level_manager.gd"
 
