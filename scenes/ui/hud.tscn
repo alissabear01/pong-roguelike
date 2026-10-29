@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://dbl51foa1bx8s"]
+
+[ext_resource type="Script" uid="uid://cuon7irlc5lsn" path="res://scripts/hud.gd" id="1_0mwgc"]
+
+[sub_resource type="GDScript" id="GDScript_hqnrr"]
+script/source = "extends Label
+
+
+# Called when the node enters the scene tree for the first time.
+func _ready() -> void:
+	pass # Replace with function body.
+
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(delta: float) -> void:
+	pass
+"
+
+[node name="HUD" type="CanvasLayer" unique_id=1110070779]
+layer = 50
+script = ExtResource("1_0mwgc")
+
+[node name="LivesLabel" type="Label" parent="." unique_id=868855437]
+anchors_preset = -1
+anchor_left = 0.001
+anchor_right = 0.013
+anchor_bottom = 0.009000001
+offset_left = -0.48000002
+offset_right = 33.76
+offset_bottom = 22.57
+theme_override_font_sizes/font_size = 5
+text = "heart"
+script = SubResource("GDScript_hqnrr")
