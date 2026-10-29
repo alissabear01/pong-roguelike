@@ -1,27 +1,17 @@
 extends Node
-## Keeps track of which level we're on and runs the handoff between them.
-## Autoloaded as `LevelManager`.
+## Keeps track of how far into the run we are and runs the handoff between
+## levels. Autoloaded as `LevelManager`.
 
-## levels in play order -- drop a new scene path in here and it joins the rotation
-const LEVELS: Array[String] = [
-	"res://scenes/levels/level_01.tscn",
-	"res://scenes/levels/level_02.tscn",
-]
+## every level is a fresh roll of this scene -- procedural_level.gd builds the room on load
+const LEVEL_SCENE := "res://scenes/levels/procedural_level.tscn"
 
 const MAIN_MENU: String = "res://scenes/ui/main_menu.tscn"
 
-var current_index: int = 0
+## 1 on the first level, +1 per clear. the generator reads it to scale enemy count
+var level_number: int = 1
 
 # guards against two enemies dying on the same frame and starting two handoffs
 var _changing: bool = false
-
-
-## Called by level.gd on load so running a level straight from the editor
-## still leaves us pointed at the right spot in LEVELS.
-func register_level(scene_path: String) -> void:
-	var i := LEVELS.find(scene_path)
-	if i != -1:
-		current_index = i
 
 
 ## Called by level.gd once every enemy in the level is dead
@@ -39,9 +29,10 @@ func level_cleared() -> void:
 	var id: String = await UpgradePicker.choose()
 	RunState.apply_upgrade(id)
 
-	# wrap back to the first level for now so run doesnt dead end
-	await _go_to_level((current_index +1 ) % LEVELS.size())
-	
+	level_number += 1
+	await _swap_scene(LEVEL_SCENE)
+
+
 ## Called by the main menu's Play button. Fresh run from level 1
 func start_run() -> void:
 	if _changing:
@@ -49,7 +40,8 @@ func start_run() -> void:
 	_changing = true
 
 	RunState.reset_run()
-	await _go_to_level(0)
+	level_number = 1
+	await _swap_scene(LEVEL_SCENE)
 
 
 ## Called by the death zone when the last life is lost
@@ -77,11 +69,6 @@ func quit_to_menu() -> void:
 ## True while a fade or scene swap is running, so the pause menu stays out of the way
 func is_changing() -> bool:
 	return _changing
-
-
-func _go_to_level(index: int) -> void:
-	current_index = index
-	await _swap_scene(LEVELS[current_index])
 
 
 # fades out, swaps to any scene, fades back in and unfreezes the game

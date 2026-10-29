@@ -1,0 +1,52 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/procedural_level.gd" id="1_proc"]
+[ext_resource type="Texture2D" uid="uid://crylvfh1u4ayo" path="res://assets/sprites/spritesheet_base.png" id="2_2djvx"]
+[ext_resource type="TileSet" uid="uid://dt48y5mhho7y1" path="res://assets/wall_tileset.tres" id="3_m802k"]
+[ext_resource type="PackedScene" uid="uid://b0exohm7j1qtb" path="res://scenes/entities/ball.tscn" id="4_i2aat"]
+[ext_resource type="PackedScene" uid="uid://cd0kq054s76xk" path="res://scenes/player.tscn" id="5_player"]
+[ext_resource type="PackedScene" uid="uid://b3yi6g6ckte20" path="res://scenes/entities/slime.tscn" id="6_uvc87"]
+[ext_resource type="PackedScene" uid="uid://c70m32q6x4qlj" path="res://scenes/entities/skeleton.tscn" id="7_qdh5e"]
+[ext_resource type="AudioStream" path="res://assets/audio/background_loop.wav" id="8_music"]
+[ext_resource type="Script" path="res://scripts/background_music.gd" id="9_music_script"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_53g83"]
+atlas = ExtResource("2_2djvx")
+region = Rect2(0, 32, 16, 16)
+
+[node name="ProceduralLevel" type="Node2D"]
+script = ExtResource("1_proc")
+enemy_scenes = Array[PackedScene]([ExtResource("6_uvc87"), ExtResource("7_qdh5e")])
+
+[node name="Background" type="CanvasLayer" parent="."]
+layer = -1
+
+[node name="TextureRect" type="TextureRect" parent="Background"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -563.0
+offset_top = -301.0
+offset_right = 116.0
+offset_bottom = 81.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = SubResource("AtlasTexture_53g83")
+stretch_mode = 1
+
+[node name="Walls" type="TileMapLayer" parent="."]
+tile_set = ExtResource("3_m802k")
+
+[node name="Enemies" type="Node2D" parent="."]
+
+[node name="Ball" parent="." instance=ExtResource("4_i2aat")]
+
+[node name="Player" parent="." instance=ExtResource("5_player")]
+
+[node name="Camera2D" type="Camera2D" parent="."]
+
+[node name="BackgroundMusic" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("8_music")
+volume_db = -12.0
+autoplay = true
+script = ExtResource("9_music_script")

@@ -26,7 +26,7 @@ func _unhandled_input(event: InputEvent) -> void:
 # only pause during normal play: in a level, not mid-fade, not while picking an upgrade
 func _can_pause() -> bool:
 	var scene := get_tree().current_scene
-	if scene == null or not LevelManager.LEVELS.has(scene.scene_file_path):
+	if scene == null or scene.scene_file_path != LevelManager.LEVEL_SCENE:
 		return false
 	return not LevelManager.is_changing() and not UpgradePicker.visible
 
