@@ -3,8 +3,20 @@ extends CharacterBody2D
 
 @export var speed := 200.0
 
+@onready var collision: CollisionShape2D = $CollisionShape2D
+@onready var sprite: Sprite2D = $Sprite2D
+
 ## half the paddle width, used by the ball to work out where along the paddle it hit
-@onready var half_width: float = $CollisionShape2D.shape.size.x / 2
+var half_width: float
+
+
+func _ready() -> void:
+	# copy the shape first! the .tscn shares one shape resource, so editing it
+	# directly would also change the paddle saved in the scene file
+	collision.shape = collision.shape.duplicate()
+	collision.shape.size.x *= RunState.paddle_width_mult
+	sprite.scale.x = RunState.paddle_width_mult
+	half_width = collision.shape.size.x / 2
 
 
 func _physics_process(_delta: float) -> void:

@@ -15,6 +15,8 @@ var _start_position: Vector2
 
 ## runs when ball enters the scene
 func _ready() -> void:
+	# apply speed upgrades once, when the level spawns the ball
+	speed *= RunState.ball_speed_mult
 	_start_position = global_position
 	launch()
 

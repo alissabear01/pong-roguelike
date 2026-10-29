@@ -33,7 +33,12 @@ func level_cleared() -> void:
 	# freeze the ball and paddle so nothing moves behind the banner
 	get_tree().paused = true
 	await Transition.show_banner("LEVEL CLEAR")
-	
+	await Transition.fade_out()
+
+	# pick an upgrade on the black screen, before the next level loads
+	var id: String = await UpgradePicker.choose()
+	RunState.apply_upgrade(id)
+
 	# wrap back to the first level for now so run doesnt dead end
 	await _go_to_level((current_index +1 ) % LEVELS.size())
 	
