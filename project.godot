@@ -21,6 +21,7 @@ Hud="*uid://dbl51foa1bx8s"
 Transition="*res://scenes/ui/transition.tscn"
 LevelManager="*res://scripts/level_manager.gd"
 UpgradePicker="*res://scenes/ui/upgrade_picker.tscn"
+PauseMenu="*res://scenes/ui/pause_menu.tscn"
 
 [display]
 

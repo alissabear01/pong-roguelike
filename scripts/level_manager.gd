@@ -64,6 +64,21 @@ func game_over() -> void:
 	await _swap_scene(MAIN_MENU)
 
 
+## Called by the pause menu's Main Menu button. Gives up on the current run
+func quit_to_menu() -> void:
+	if _changing:
+		return
+	_changing = true
+
+	# the game is already paused under the pause menu, so just fade and swap
+	await _swap_scene(MAIN_MENU)
+
+
+## True while a fade or scene swap is running, so the pause menu stays out of the way
+func is_changing() -> bool:
+	return _changing
+
+
 func _go_to_level(index: int) -> void:
 	current_index = index
 	await _swap_scene(LEVELS[current_index])

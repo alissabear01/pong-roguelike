@@ -19,7 +19,6 @@ func _ready() -> void:
 ## called by ball when it collides with this enemy
 func take_damage(amount: int = 1) -> void:
 	health -= amount
-	print("hit, health now: ",health)
 	if health <= 0:
 		die()
 	else: 
@@ -41,7 +40,6 @@ func shake() -> void:
 
 func die() -> void:
 	died.emit()
-	print("die called, effect is: ", death_effect)
 	if death_effect:
 		var fx:= death_effect.instantiate()
 		# add to the level, not to self - about to self destruct......
