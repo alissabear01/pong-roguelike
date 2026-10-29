@@ -1,33 +1,30 @@
 [gd_scene format=3 uid="uid://dbl51foa1bx8s"]
 
 [ext_resource type="Script" uid="uid://cuon7irlc5lsn" path="res://scripts/hud.gd" id="1_0mwgc"]
+[ext_resource type="Texture2D" uid="uid://crylvfh1u4ayo" path="res://assets/sprites/spritesheet_base.png" id="2_sheet"]
 
-[sub_resource type="GDScript" id="GDScript_hqnrr"]
-script/source = "extends Label
-
-
-# Called when the node enters the scene tree for the first time.
-func _ready() -> void:
-	pass # Replace with function body.
-
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-	pass
-"
+[sub_resource type="AtlasTexture" id="AtlasTexture_ball"]
+atlas = ExtResource("2_sheet")
+region = Rect2(32, 0, 16, 16)
 
 [node name="HUD" type="CanvasLayer" unique_id=1110070779]
 layer = 50
 script = ExtResource("1_0mwgc")
 
-[node name="LivesLabel" type="Label" parent="." unique_id=868855437]
-anchors_preset = -1
-anchor_left = 0.001
-anchor_right = 0.013
-anchor_bottom = 0.009000001
-offset_left = -0.48000002
-offset_right = 33.76
-offset_bottom = 22.57
-theme_override_font_sizes/font_size = 5
-text = "heart"
-script = SubResource("GDScript_hqnrr")
+[node name="Lives" type="HBoxContainer" parent="."]
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 44.0
+offset_bottom = 20.0
+theme_override_constants/separation = 0
+
+[node name="BallIcon" type="TextureRect" parent="Lives"]
+layout_mode = 2
+texture = SubResource("AtlasTexture_ball")
+stretch_mode = 5
+
+[node name="LivesLabel" type="Label" parent="Lives" unique_id=868855437]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "x3"
+vertical_alignment = 1

@@ -1,7 +1,7 @@
 extends CanvasLayer
 ## always-on-screen run info. autoloaded as 'HUD', so every level gets it for free
 
-@onready var lives_label: Label = $LivesLabel
+@onready var lives_label: Label = $Lives/LivesLabel
 
 func _ready() -> void:
 	RunState.lives_changed.connect(_on_lives_changed)
@@ -9,4 +9,4 @@ func _ready() -> void:
 	_on_lives_changed(RunState.lives)
 
 func _on_lives_changed(lives: int) -> void:
-	lives_label.text = "LIVES: %d" % lives
+	lives_label.text = "x%d" % lives

@@ -8,6 +8,8 @@ const LEVELS: Array[String] = [
 	"res://scenes/levels/level_02.tscn",
 ]
 
+const MAIN_MENU: String = "res://scenes/ui/main_menu.tscn"
+
 var current_index: int = 0
 
 # guards against two enemies dying on the same frame and starting two handoffs
@@ -35,29 +37,41 @@ func level_cleared() -> void:
 	# wrap back to the first level for now so run doesnt dead end
 	await _go_to_level((current_index +1 ) % LEVELS.size())
 	
+## Called by the main menu's Play button. Fresh run from level 1
+func start_run() -> void:
+	if _changing:
+		return
+	_changing = true
+
+	RunState.reset_run()
+	await _go_to_level(0)
+
+
 ## Called by the death zone when the last life is lost
 func game_over() -> void:
 	if _changing:
 		return
 	_changing = true
-	
+
 	get_tree().paused = true
 	await Transition.show_banner("GAME OVER")
-	
-	# roguelike rules: a brand new run from the very first level
-	RunState.reset_run()
-	await _go_to_level(0)
-	
-# fades out, swaps to LEVELS[index], fades back in and unfreezes the game
-func _go_to_level(index: int) -> void:
-	await Transition.fade_out()
-	
-	current_index = index
+	# roguelike rules: back to the title, the next Play starts a brand new run
+	await _swap_scene(MAIN_MENU)
 
-	get_tree().change_scene_to_file(LEVELS[current_index])
-	# the swap happppebs at the endof the frame, so wait for the new tree
+
+func _go_to_level(index: int) -> void:
+	current_index = index
+	await _swap_scene(LEVELS[current_index])
+
+
+# fades out, swaps to any scene, fades back in and unfreezes the game
+func _swap_scene(path: String) -> void:
+	await Transition.fade_out()
+
+	get_tree().change_scene_to_file(path)
+	# the swap happens at the end of the frame, so wait for the new tree
 	await get_tree().process_frame
-	
+
 	await Transition.fade_in()
 	get_tree().paused = false
 	_changing = false

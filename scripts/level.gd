@@ -6,6 +6,7 @@ var _enemies_left: int = 0
 
 
 func _ready() -> void:
+	Hud.show()
 	LevelManager.register_level(scene_file_path)
 
 	# children run _ready before we do, so they're already in the "enemies" group
