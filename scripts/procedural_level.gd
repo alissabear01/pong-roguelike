@@ -20,8 +20,9 @@ const SIDES: Array[Vector2i] = [Vector2i.DOWN, Vector2i.UP, Vector2i.LEFT, Vecto
 @export var max_room_size := Vector2i(24, 12)
 
 ## hole length in tiles, rolled between these (inclusive). the paddle slides
-## inside the hole and the wall on either end stops it
-@export var hole_size := Vector2i(5, 10)
+## inside the hole and the wall on either end stops it. the shortest length
+## holds for corner holes too, counting both arms and the corner tile
+@export var hole_size := Vector2i(10, 14)
 
 ## tiles of slack the hole always has beyond the paddle's length, so a
 ## big paddle upgrade can't leave it with nowhere to move
@@ -182,7 +183,11 @@ func _cut_corner_hole(interior: Rect2i, paddle_tiles: int) -> bool:
 		interior.position.x - 1 if corner.x < 0 else interior.end.x,
 		interior.position.y - 1 if corner.y < 0 else interior.end.y)
 	var flat_arm := _rng.randi_range(shortest_arm, maxi(shortest_arm, mini(corner_arm_size.y, interior.size.x - 1)))
-	var tall_arm := _rng.randi_range(shortest_arm, maxi(shortest_arm, mini(corner_arm_size.y, interior.size.y - 1)))
+	# the side arm makes up whatever the flat one leaves short of hole_size.x
+	# (the corner tile counts too)
+	var longest_tall := maxi(shortest_arm, mini(corner_arm_size.y, interior.size.y - 1))
+	var shortest_tall := mini(maxi(shortest_arm, hole_size.x - 1 - flat_arm), longest_tall)
+	var tall_arm := _rng.randi_range(shortest_tall, longest_tall)
 
 	walls.erase_cell(corner_cell)
 	for i in range(1, flat_arm + 1):

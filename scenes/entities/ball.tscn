@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://cx2xdrlicx1tw" path="res://scripts/ball.gd" id="1_1pamd"]
 [ext_resource type="Texture2D" uid="uid://crylvfh1u4ayo" path="res://assets/sprites/spritesheet_base.png" id="2_rlpj1"]
+[ext_resource type="Texture2D" uid="uid://s5576k1gkc2u" path="res://assets/sprites/launch_arrow.png" id="3_arrow"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_53g83"]
 radius = 4.0
@@ -20,3 +21,7 @@ texture = ExtResource("2_rlpj1")
 hframes = 4
 vframes = 4
 frame = 2
+
+[node name="LaunchArrow" type="Sprite2D" parent="."]
+visible = false
+texture = ExtResource("3_arrow")
