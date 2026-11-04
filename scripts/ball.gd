@@ -7,6 +7,9 @@ extends CharacterBody2D
 ## ball speed in pixels per s, can tweak in inspector
 @export var speed: float = 300.0
 
+## how much damage the ball deals to enemies
+@export var damage: int = 1
+
 ## how far from straight-up (in degrees) the ball is sent when it hits the very edge of the paddle
 @export var max_bounce_angle: float = 60.0
 
@@ -58,6 +61,8 @@ var _next_track_time: float = 0.0
 func _ready() -> void:
 	# apply speed upgrades once, when the level spawns the ball
 	speed *= RunState.ball_speed_mult
+	scale *= RunState.ball_size_mult
+	damage += RunState.ball_damage_bonus
 	_start_position = global_position
 	launch()
 
@@ -124,7 +129,7 @@ func _physics_process(delta: float) -> void:
 
 		# if it was something breakable, damage it
 		if collider.has_method("take_damage"):
-			collider.take_damage()
+			collider.take_damage(damage)
 
 # The ball moves at a constant speed and reflects perfectly, so if it bounces
 # off the same spot heading the same way as before, it's going to repeat that
@@ -201,3 +206,25 @@ func _bounce_off_paddle(paddle: Player) -> Vector2:
 	# the paddle can sit on any wall and bend round corners, so it works out
 	# which way its face points where we hit it
 	return paddle.bounce_direction(global_position, deg_to_rad(max_bounce_angle)) * speed
+
+
+func apply_upgrade(upgrade: StringName) -> String:
+	match upgrade:
+		&"speed":
+			RunState.ball_speed_mult *= 1.25
+			speed *= 1.25
+			velocity = velocity.normalized() * speed
+			return "FAST BALL  +25% SPEED"
+		&"size":
+			RunState.ball_size_mult *= 1.25
+			_scale_ball(1.25)
+			return "BIG BALL  +25% SIZE"
+		&"power":
+			RunState.ball_damage_bonus += 1
+			damage += 1
+			return "POWER BALL  +1 DAMAGE"
+	return ""
+
+
+func _scale_ball(multiplier: float) -> void:
+	scale *= multiplier

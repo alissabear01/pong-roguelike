@@ -14,6 +14,9 @@ const SIDES: Array[Vector2i] = [Vector2i.DOWN, Vector2i.UP, Vector2i.LEFT, Vecto
 ## enemy scenes to spawn, one picked at random for each enemy
 @export var enemy_scenes: Array[PackedScene] = []
 
+## chest placed in every room; opening it gives the ball a random upgrade
+@export var chest_scene: PackedScene
+
 ## room interior size in tiles, rolled between these (inclusive).
 ## the screen fits 30x16 tiles, walls included, so stay under 28x14
 @export var min_room_size := Vector2i(16, 9)
@@ -80,6 +83,7 @@ func _ready() -> void:
 	_place_paddle_and_ball()
 	_place_death_zone()
 	_spawn_enemies(room)
+	_spawn_chest(room)
 
 	# enemies are in the tree now, so the base level can count them
 	super._ready()
@@ -295,6 +299,51 @@ func _spawn_enemies(room: Rect2) -> void:
 		enemy.move_bounds = zone
 		enemies.add_child(enemy)
 		count -= 1
+
+
+func _spawn_chest(room: Rect2) -> void:
+	if chest_scene == null:
+		return
+
+	# Pick an open spot away from the paddle and any enemy spawn points.
+	var bounds := room.grow(-24.0)
+	for attempt in 32:
+		var pos := Vector2(
+			_rng.randf_range(bounds.position.x, bounds.end.x),
+			_rng.randf_range(bounds.position.y, bounds.end.y))
+		if pos.distance_to(player.position) < 56.0:
+			continue
+		var overlaps_enemy := false
+		for enemy in enemies.get_children():
+			if pos.distance_to(enemy.position) < 28.0:
+				overlaps_enemy = true
+				break
+		if overlaps_enemy:
+			continue
+
+		var chest := chest_scene.instantiate()
+		chest.position = pos
+		chest.upgrade_revealed.connect(_on_upgrade_revealed)
+		add_child(chest)
+		return
+
+
+func _on_upgrade_revealed(upgrade: StringName) -> void:
+	var message := ball.apply_upgrade(upgrade)
+	var layer := CanvasLayer.new()
+	layer.layer = 40
+	add_child(layer)
+	var label := Label.new()
+	label.text = message
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.position = Vector2(100, 220)
+	label.size = Vector2(280, 24)
+	label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.55))
+	layer.add_child(label)
+	var tween := create_tween()
+	tween.tween_interval(1.3)
+	tween.tween_property(label, "modulate:a", 0.0, 0.4)
+	tween.tween_callback(layer.queue_free)
 
 
 # Array.shuffle() uses the global RNG, so do it by hand to keep room_seed repeatable
