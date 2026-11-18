@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene format=3]
 
-[ext_resource type="Script" path="res://scenes/entities/upgrade_chest.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://dh2ekbdav8k01" path="res://scripts/upgrade_chest.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://crylvfh1u4ayo" path="res://assets/sprites/spritesheet_base.png" id="2_texture"]
+
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_chest"]
 size = Vector2(16, 16)
