@@ -20,8 +20,6 @@ var lives: int
 ## 1.0 = normal. the ball and paddle multiply by these when a level loads
 var ball_speed_mult: float
 var paddle_width_mult: float
-var ball_size_mult: float
-var ball_damage_bonus: int
 
 func _ready() -> void:
 	reset_run()
@@ -32,8 +30,6 @@ func reset_run() -> void:
 	lives = STARTING_LIVES
 	ball_speed_mult = 1.0
 	paddle_width_mult = 1.0
-	ball_size_mult = 1.0
-	ball_damage_bonus = 0
 	lives_changed.emit(lives)
 	
 ## takes a life away. returns true if that was the last one

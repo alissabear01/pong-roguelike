@@ -14,8 +14,15 @@ const SIDES: Array[Vector2i] = [Vector2i.DOWN, Vector2i.UP, Vector2i.LEFT, Vecto
 ## enemy scenes to spawn, one picked at random for each enemy
 @export var enemy_scenes: Array[PackedScene] = []
 
-## chest placed in every room; opening it gives the ball a random upgrade
+## chest that turns up during the room; breaking it lets out another ball
 @export var chest_scene: PackedScene
+
+## seconds after the room starts, or after the last chest broke, before a
+## new chest turns up. only one chest is ever out at a time
+@export var chest_interval: float = 5.0
+
+## the ball scene, for the extra balls that come out of chests
+@export var ball_scene: PackedScene
 
 ## room interior size in tiles, rolled between these (inclusive).
 ## the screen fits 30x16 tiles, walls included, so stay under 28x14
@@ -51,6 +58,12 @@ const SIDES: Array[Vector2i] = [Vector2i.DOWN, Vector2i.UP, Vector2i.LEFT, Vecto
 ## enemies spawn and move only outside it
 @export var paddle_clearance: float = 72.0
 
+## px from a wall a spawn spot has to be to count as out in the open.
+## enemies (and chests) tucked by a wall or in a corner are slow to hit, so
+## spots by a wall are only used once the open ones run out, and corner
+## spots last of all
+@export var wall_margin: float = 40.0
+
 ## 0 rolls a new room every time, anything else always builds the same room
 @export var room_seed: int = 0
 
@@ -70,6 +83,15 @@ var _hole_sides: Array[Vector2i] = []
 var _track := PackedVector2Array()
 # which segment of the track the paddle starts on
 var _start_segment := 0
+# where every ball respawns, and which way it launches from there
+var _ball_start: Vector2
+var _ball_direction: Vector2
+# the open interior in px
+var _room: Rect2
+# the room minus the paddle's clearance: where enemies and chests can go
+var _play_zone: Rect2
+# counts down to the next chest. runs on the physics clock, so pausing stops it
+var _chest_timer := Timer.new()
 
 
 func _ready() -> void:
@@ -78,12 +100,24 @@ func _ready() -> void:
 	# printed so a weird room can be rebuilt by pasting this into room_seed
 	print("level %d, room seed %d" % [LevelManager.level_number, _rng.seed])
 
-	var room := _build_walls()
-	_cut_hole(room)
+	_room = _build_walls()
+	_cut_hole(_room)
+	# shave the clearance off whichever sides the hole is on
+	_play_zone = _room.grow_individual(
+		-paddle_clearance if Vector2i.LEFT in _hole_sides else 0.0,
+		-paddle_clearance if Vector2i.UP in _hole_sides else 0.0,
+		-paddle_clearance if Vector2i.RIGHT in _hole_sides else 0.0,
+		-paddle_clearance if Vector2i.DOWN in _hole_sides else 0.0)
 	_place_paddle_and_ball()
 	_place_death_zone()
-	_spawn_enemies(room)
-	_spawn_chest(room)
+	_spawn_enemies()
+
+	# no chest at the start, the first one turns up after chest_interval
+	_chest_timer.one_shot = true
+	_chest_timer.process_callback = Timer.TIMER_PROCESS_PHYSICS
+	_chest_timer.timeout.connect(_spawn_chest)
+	add_child(_chest_timer)
+	_chest_timer.start(chest_interval)
 
 	# enemies are in the tree now, so the base level can count them
 	super._ready()
@@ -227,9 +261,10 @@ func _place_paddle_and_ball() -> void:
 	# first launch is always catchable
 	var out := outs[_start_segment]
 	var segment := _track[_start_segment + 1] - _track[_start_segment]
-	var ball_pos := player.position - out * (TILE_SIZE / 2.0 + 56) \
+	_ball_start = player.position - out * (TILE_SIZE / 2.0 + 56) \
 		+ segment * _rng.randf_range(-0.25, 0.25)
-	ball.set_start(ball_pos, out)
+	_ball_direction = out
+	ball.set_start(_ball_start, _ball_direction)
 
 
 ## Lays a long strip just outside each wall the hole is in, so a ball that
@@ -254,31 +289,31 @@ func _place_death_zone() -> void:
 		collision.position = wall_middle + out * (TILE_SIZE / 2.0 + shape.size.y / 2)
 
 
-## Splits the room (minus the strip in front of the paddle) into a grid of
-## spawn spots and fills a random handful of them. Enemies move about a tile,
-## so the spots beside a filled one are left empty and neighbours can't walk
-## into each other.
-func _spawn_enemies(room: Rect2) -> void:
+## Splits the play zone into a grid of spawn spots and fills a random handful
+## of them, out in the open first: spots by a wall are only used once the open
+## ones run out, then corners. Enemies move about a tile, so the spots beside
+## a filled one are left empty and neighbours can't walk into each other.
+func _spawn_enemies() -> void:
 	if enemy_scenes.is_empty():
 		push_warning("no enemy_scenes set on %s" % name)
 		return
 
-	# shave the clearance off whichever sides the hole is on
-	var zone := room.grow_individual(
-		-paddle_clearance if Vector2i.LEFT in _hole_sides else 0.0,
-		-paddle_clearance if Vector2i.UP in _hole_sides else 0.0,
-		-paddle_clearance if Vector2i.RIGHT in _hole_sides else 0.0,
-		-paddle_clearance if Vector2i.DOWN in _hole_sides else 0.0)
+	var zone := _play_zone
 	var cols := floori(zone.size.x / enemy_spacing.x)
 	var rows := floori(zone.size.y / enemy_spacing.y)
 	# leftover space gets split evenly on both sides so the grid is centred
 	var margin := (zone.size - Vector2(cols, rows) * enemy_spacing) / 2
 
-	var cells: Array[Vector2i] = []
+	# sorted by how many walls each spot is close to: 0 open, 1 by a wall, 2 corner
+	var by_walls: Array[Array] = [[], [], []]
 	for row in rows:
 		for col in cols:
-			cells.append(Vector2i(col, row))
-	_shuffle(cells)
+			var cell := Vector2i(col, row)
+			by_walls[_walls_near(_cell_position(cell, zone, margin))].append(cell)
+	var cells := []
+	for group in by_walls:
+		_shuffle(group)
+		cells.append_array(group)
 
 	var count := base_enemy_count + enemies_per_level * (LevelManager.level_number - 1)
 	# grid cells that are filled, or right beside a filled one
@@ -294,56 +329,80 @@ func _spawn_enemies(room: Rect2) -> void:
 
 		var scene: PackedScene = enemy_scenes[_rng.randi_range(0, enemy_scenes.size() - 1)]
 		var enemy := scene.instantiate()
-		enemy.position = zone.position + margin + (Vector2(cell) + Vector2(0.5, 0.5)) * enemy_spacing
+		enemy.position = _cell_position(cell, zone, margin)
 		# keeps it inside the room and out of the paddle's clearance
 		enemy.move_bounds = zone
 		enemies.add_child(enemy)
 		count -= 1
 
 
-func _spawn_chest(room: Rect2) -> void:
+# centre of a spawn grid cell, in px
+func _cell_position(cell: Vector2i, zone: Rect2, margin: Vector2) -> Vector2:
+	return zone.position + margin + (Vector2(cell) + Vector2(0.5, 0.5)) * enemy_spacing
+
+
+# 0 if pos is out in the open, 1 if it's within wall_margin of a side or the
+# top/bottom wall, 2 if it's near both (a corner)
+func _walls_near(pos: Vector2) -> int:
+	var near_side := pos.x - _room.position.x < wall_margin or _room.end.x - pos.x < wall_margin
+	var near_end := pos.y - _room.position.y < wall_margin or _room.end.y - pos.y < wall_margin
+	return int(near_side) + int(near_end)
+
+
+## Puts a chest somewhere open in the play zone, clear of the walls, the
+## enemies and the balls. It fades itself in. The timer only restarts once
+## it's broken, so there's never more than one out.
+func _spawn_chest() -> void:
 	if chest_scene == null:
 		return
 
-	# Pick an open spot away from the paddle and any enemy spawn points.
-	var bounds := room.grow(-24.0)
+	var bounds := _play_zone.grow(-wall_margin)
+	if not bounds.has_area():
+		# tiny play zone: just stay off the walls
+		bounds = _play_zone.grow(-TILE_SIZE)
 	for attempt in 32:
 		var pos := Vector2(
 			_rng.randf_range(bounds.position.x, bounds.end.x),
 			_rng.randf_range(bounds.position.y, bounds.end.y))
-		if pos.distance_to(player.position) < 56.0:
-			continue
-		var overlaps_enemy := false
-		for enemy in enemies.get_children():
-			if pos.distance_to(enemy.position) < 28.0:
-				overlaps_enemy = true
-				break
-		if overlaps_enemy:
+		if _too_close(pos, enemies.get_children(), 36.0) \
+				or _too_close(pos, get_tree().get_nodes_in_group("balls"), 24.0):
 			continue
 
 		var chest := chest_scene.instantiate()
 		chest.position = pos
-		chest.upgrade_revealed.connect(_on_upgrade_revealed)
+		# deferred: the chest breaks in the middle of a ball's physics step
+		chest.ball_released.connect(_on_chest_broken, CONNECT_DEFERRED)
 		add_child(chest)
 		return
 
+	# nowhere free right now (balls or enemies in the way), try again shortly
+	_chest_timer.start(1.0)
 
-func _on_upgrade_revealed(upgrade: StringName) -> void:
-	var message := ball.apply_upgrade(upgrade)
-	var layer := CanvasLayer.new()
-	layer.layer = 40
-	add_child(layer)
-	var label := Label.new()
-	label.text = message
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.position = Vector2(100, 220)
-	label.size = Vector2(280, 24)
-	label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.55))
-	layer.add_child(label)
-	var tween := create_tween()
-	tween.tween_interval(1.3)
-	tween.tween_property(label, "modulate:a", 0.0, 0.4)
-	tween.tween_callback(layer.queue_free)
+
+# true if any of nodes is closer than distance to pos
+func _too_close(pos: Vector2, nodes: Array, distance: float) -> bool:
+	for node: Node2D in nodes:
+		if pos.distance_to(node.global_position) < distance:
+			return true
+	return false
+
+
+func _on_chest_broken(pos: Vector2) -> void:
+	_release_ball(pos)
+	_chest_timer.start(chest_interval)
+
+## A new ball bursts out of a broken chest at pos, already moving in a random
+## direction. If it's ever the last ball left and gets lost, it respawns in
+## front of the paddle like the first one.
+func _release_ball(pos: Vector2) -> void:
+	if ball_scene == null:
+		push_warning("no ball_scene set on %s" % name)
+		return
+	var new_ball: Ball = ball_scene.instantiate()
+	add_child(new_ball)
+	# set_start shows the aim arrow, release straight away skips it
+	new_ball.set_start(_ball_start, _ball_direction)
+	new_ball.release(pos)
 
 
 # Array.shuffle() uses the global RNG, so do it by hand to keep room_seed repeatable

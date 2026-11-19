@@ -43,13 +43,16 @@ func _body_rect() -> Rect2:
 
 @onready var sprite:Sprite2D = $Sprite2D
 
-## called by ball when it collides with this enemy
-func take_damage(amount: int = 1) -> void:
+## called by ball when it collides with this enemy. returns true if that hit
+## killed it, so the ball flies on through instead of bouncing
+func take_damage(amount: int = 1) -> bool:
 	health -= amount
 	if health <= 0:
 		die()
-	else: 
-		shake()
+		return true
+	Sfx.play(&"enemy_hurt", 1.0, 0.05)
+	shake()
+	return false
 	
 func shake() -> void:
 	var start:= sprite.position
@@ -66,6 +69,7 @@ func shake() -> void:
 @export var death_effect: PackedScene
 
 func die() -> void:
+	Sfx.play(&"enemy_defeated", 1.0, 0.05)
 	died.emit()
 	if death_effect:
 		var fx:= death_effect.instantiate()
