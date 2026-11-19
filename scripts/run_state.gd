@@ -10,9 +10,9 @@ const STARTING_LIVES: int = 3
 
 ## every upgrade the picker can offer. add a new one here + a match branch in apply_upgrade()
 const UPGRADES: Array[Dictionary] = [
-	{"id": "fast_ball", "name": "Fast Ball", "desc": "Ball speed +20%"},
-	{"id": "slow_ball", "name": "Slow Ball", "desc": "Ball speed -20%"},
-	{"id": "big_paddle", "name": "Big Paddle", "desc": "Paddle 25% wider"},
+	{"id": "fast_ball", "name": "Fast ball", "desc": "Ball 20% faster"},
+	{"id": "slow_ball", "name": "Slow ball", "desc": "Ball 20% slower"},
+	{"id": "big_paddle", "name": "Big paddle", "desc": "Paddle 25% wider"},
 ]
 
 var lives: int
@@ -22,6 +22,10 @@ var ball_speed_mult: float
 var paddle_width_mult: float
 var ball_size_mult: float
 var ball_damage_bonus: int
+
+## the special ball a boss dropped this run, empty if none yet.
+## set by LevelManager._give_special_ball() once special balls exist
+var special_ball: StringName
 
 func _ready() -> void:
 	reset_run()
@@ -34,6 +38,7 @@ func reset_run() -> void:
 	paddle_width_mult = 1.0
 	ball_size_mult = 1.0
 	ball_damage_bonus = 0
+	special_ball = &""
 	lives_changed.emit(lives)
 	
 ## takes a life away. returns true if that was the last one

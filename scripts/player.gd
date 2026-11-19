@@ -3,6 +3,25 @@ extends CharacterBody2D
 
 @export var speed := 200.0
 
+## how wide the paddle starts out (1 = sprite size). Big Paddle upgrades stack on top
+@export var base_width: float = 1.25
+
+## degrees the ball gets tilted the way the paddle is moving when it's hit,
+## on top of the angle it gets from where it landed. 0 turns it off
+@export var move_nudge: float = 18.0
+
+## the steepest the ball can leave the paddle, in degrees from straight out.
+## stops the nudge sending it flat along the wall
+@export var max_leave_angle: float = 78.0
+
+## true while the ball is being aimed: the move keys steer the arrow instead,
+## so the paddle holds still
+var frozen := false
+
+# which way the paddle moved this physics frame: 1 forward along its length
+# (or its track), -1 back, 0 still
+var _move_dir := 0.0
+
 @onready var collision: CollisionShape2D = $CollisionShape2D
 @onready var sprite: Sprite2D = $Sprite2D
 
@@ -30,8 +49,9 @@ func _ready() -> void:
 	# copy the shape first! the .tscn shares one shape resource, so editing it
 	# directly would also change the paddle saved in the scene file
 	collision.shape = collision.shape.duplicate()
-	collision.shape.size.x *= RunState.paddle_width_mult
-	sprite.scale.x = RunState.paddle_width_mult
+	var width_mult := RunState.paddle_width_mult * base_width
+	collision.shape.size.x *= width_mult
+	sprite.scale.x = width_mult
 	half_width = collision.shape.size.x / 2
 
 
@@ -90,11 +110,49 @@ func bounce_direction(point: Vector2, max_angle: float) -> Vector2:
 				along = tangent
 				offset = (_track_dist[i] + d - _track_pos) / half_width
 
-	var angle := max_angle * clampf(offset, -1.0, 1.0)
+	# where it landed picks the angle, and a moving paddle pushes it a bit
+	# further the way it's going
+	var angle := max_angle * clampf(offset, -1.0, 1.0) + deg_to_rad(move_nudge) * _move_dir
+	var steepest := maxf(max_angle, deg_to_rad(max_leave_angle))
+	angle = clampf(angle, -steepest, steepest)
 	return up * cos(angle) + along * sin(angle)
 
 
+## Where the ball sits while it's being aimed: resting on the paddle's inside
+## face, in the middle of it. Returns [spot, direction into the room], both in
+## global space. ball_radius keeps the ball just clear of the paddle.
+func hold_spot(ball_radius: float) -> Array:
+	if _track.is_empty():
+		var up := Vector2.UP.rotated(global_rotation)
+		var gap: float = collision.shape.size.y / 2 + ball_radius + 1.0
+		return [global_position + up * gap, up]
+
+	# a bent paddle covers two walls, so use whichever holds more of it and
+	# sit in the middle of that part (well away from the corner)
+	var back_end := _track_pos - half_width
+	var front_end := _track_pos + half_width
+	var best := 0
+	var best_length := -1.0
+	var best_mid := _track_pos
+	for i in _track.size() - 1:
+		var start := maxf(back_end, _track_dist[i])
+		var end := minf(front_end, _track_dist[i + 1])
+		if end - start > best_length:
+			best_length = end - start
+			best = i
+			best_mid = (start + end) / 2
+	var into_room := -_track_out[best]
+	var on_track := _track[best] + _tangent(best) * (best_mid - _track_dist[best])
+	var spot := on_track + into_room * (_thickness / 2 + ball_radius + 1.0)
+	var parent: Node2D = get_parent()
+	return [parent.to_global(spot), into_room]
+
+
 func _physics_process(delta: float) -> void:
+	if frozen:
+		_move_dir = 0.0
+		return
+
 	var input := Vector2(
 		Input.get_axis("move_left", "move_right"),
 		Input.get_axis("move_up", "move_down"))
@@ -104,40 +162,30 @@ func _physics_process(delta: float) -> void:
 		# turned 90 degrees, so up/down moves it there instead of left/right
 		var along := global_transform.x.abs().round()
 		velocity = input * along * speed
+		_move_dir = signf(velocity.dot(global_transform.x))
 		# Walls are on physics layer 1 (our collision_mask), so move_and_slide stops us at them
 		move_and_slide()
 	else:
 		_move_along_track(input, delta)
 
 
-# The leading end of the paddle steers: to move toward an end, push along the
-# wall that end is on (left/right on the top and bottom, up/down on the
-# sides). An end stops when it reaches a corner, and only goes round once you
-# push along the next wall, then the rest of the paddle snakes after it.
+# Any key that points along any wall of the track moves the paddle that way
+# along the whole track, corners included. So on a track that goes right then
+# up, right and up both mean "forward" and left and down both mean "back":
+# hold one key and the paddle snakes round the corner on its own, no need to
+# switch keys at the bend. (the two walls of a corner are at right angles, so
+# the four keys always split two forward, two back and never clash)
 func _move_along_track(input: Vector2, delta: float) -> void:
-	var front := _track_pos + half_width
-	var back := _track_pos - half_width
-	# the wall each end would move along. an end sitting on a corner is
-	# about to go round it, so it counts as on the next wall
-	var front_segment := _segment_ahead(front, true)
-	var back_segment := _segment_ahead(back, false)
+	var forward := Vector2.ZERO
+	for i in _track.size() - 1:
+		forward += _tangent(i)
+	var step := clampf(input.dot(forward), -1.0, 1.0)
 
-	var step := 0.0
-	var forward := input.dot(_tangent(front_segment))
-	var backward := input.dot(_tangent(back_segment))
-	if forward > 0:
-		step = forward
-	elif backward < 0:
-		step = backward
-
-	# the leading end goes no further than the end of its wall: the next
-	# corner, or the hole's edge
 	var move := step * speed * delta
-	if move > 0:
-		move = minf(move, _track_dist[front_segment + 1] - front)
-	elif move < 0:
-		move = maxf(move, _track_dist[back_segment] - back)
+	var before := _track_pos
 	_track_pos = clampf(_track_pos + move, half_width, _track_dist[-1] - half_width)
+	# only counts as moving if it really went somewhere, not pushing into the hole's end
+	_move_dir = signf(_track_pos - before) if absf(_track_pos - before) > 0.01 else 0.0
 	_lay_on_track()
 
 
@@ -190,16 +238,6 @@ func _tangent(segment: int) -> Vector2:
 func _segment_at(dist: float) -> int:
 	for i in range(_track.size() - 2):
 		if dist < _track_dist[i + 1]:
-			return i
-	return _track.size() - 2
-
-
-# the segment an end of the paddle at dist moves along going forward (or back).
-# on a corner that's the segment past it, the way it's heading
-func _segment_ahead(dist: float, forward: bool) -> int:
-	for i in range(_track.size() - 2):
-		var corner := _track_dist[i + 1]
-		if (forward and dist < corner - 0.001) or (not forward and dist <= corner + 0.001):
 			return i
 	return _track.size() - 2
 

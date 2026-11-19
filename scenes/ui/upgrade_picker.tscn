@@ -21,7 +21,7 @@ theme_override_constants/separation = 12
 [node name="Title" type="Label" parent="Layout"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
-text = "Choose an Upgrade"
+text = "Choose an upgrade"
 horizontal_alignment = 1
 
 [node name="Choices" type="HBoxContainer" parent="Layout"]
@@ -33,19 +33,19 @@ theme_override_constants/separation = 8
 custom_minimum_size = Vector2(120, 60)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
-text = "Fast Ball
-Ball speed +20%"
+text = "Fast ball
+Ball 20% faster"
 
 [node name="Choice2" type="Button" parent="Layout/Choices"]
 custom_minimum_size = Vector2(120, 60)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
-text = "Slow Ball
-Ball speed -20%"
+text = "Slow ball
+Ball 20% slower"
 
 [node name="Choice3" type="Button" parent="Layout/Choices"]
 custom_minimum_size = Vector2(120, 60)
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
-text = "Big Paddle
+text = "Big paddle
 Paddle 25% wider"

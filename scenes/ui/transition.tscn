@@ -1,7 +1,6 @@
-[gd_scene load_steps=3 format=3 uid="uid://cq4h8n0vbxw7t"]
+[gd_scene load_steps=2 format=3 uid="uid://cq4h8n0vbxw7t"]
 
 [ext_resource type="Script" uid="uid://iknqwcqy57qs" path="res://scripts/transition.gd" id="1_trans"]
-[ext_resource type="FontFile" uid="uid://ctlauuhgwgkec" path="res://assets/fonts/pixel_font.png" id="2_font"]
 
 [node name="Transition" type="CanvasLayer"]
 process_mode = 3
@@ -12,6 +11,18 @@ script = ExtResource("1_trans")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.019607844, 0.02745098, 0.07058824, 0)
+
+[node name="BannerStrip" type="ColorRect" parent="."]
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_top = -20.0
+offset_bottom = 20.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -28,7 +39,6 @@ theme_override_colors/font_color = Color(0.9882353, 0.9019608, 0.7176471, 1)
 theme_override_colors/font_shadow_color = Color(0.019607844, 0.02745098, 0.07058824, 1)
 theme_override_constants/shadow_offset_x = 2
 theme_override_constants/shadow_offset_y = 2
-theme_override_font_sizes/font_size = 16
-theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 32
 horizontal_alignment = 1
 vertical_alignment = 1

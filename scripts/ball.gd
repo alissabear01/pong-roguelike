@@ -7,23 +7,43 @@ extends CharacterBody2D
 ## ball speed in pixels per s, can tweak in inspector
 @export var speed: float = 300.0
 
+## how big the ball starts out (1 = sprite size). chest Big ball upgrades stack on top
+@export var base_size: float = 1.0
+
 ## how much damage the ball deals to enemies
 @export var damage: int = 1
 
 ## how far from straight-up (in degrees) the ball is sent when it hits the very edge of the paddle
 @export var max_bounce_angle: float = 60.0
 
-## seconds the ball sits still with the arrow showing before it launches
-@export var aim_time: float = 2.0
+## seconds you get to aim the arrow before the ball fires on its own
+@export var aim_time: float = 4.0
+
+## how far either side of straight ahead the arrow can swing, in degrees
+@export var max_aim_angle: float = 60.0
+
+## how fast the arrow swings while a direction is held, in degrees per s
+@export var aim_turn_speed: float = 120.0
 
 ## how far in front of the ball's centre the arrow sits, in px
 @export var arrow_distance: float = 11.0
 
+## how much bigger the ball's sprite swells when it gets a chest upgrade, and
+## how long it takes to settle back (s)
+@export var upgrade_pulse_size: float = 1.8
+@export var upgrade_pulse_time: float = 0.45
+
 ## seconds the ball can spend stuck in a repeating bounce loop before it relaunches
 @export var loop_timeout: float = 5.0
 
-## which way the ball heads on launch (give or take 45 degrees). points at the paddle
-var launch_direction := Vector2.DOWN
+## straight ahead for the arrow: into the room, away from the paddle
+var launch_direction := Vector2.UP
+
+## the paddle, so it can hold still while you aim. the level sets it
+var paddle: Player
+
+# how far the arrow is swung away from launch_direction, in radians
+var _aim_offset: float = 0.0
 
 # where the level placed the ball, so we can put it back after a lost life
 var _start_position: Vector2
@@ -61,7 +81,7 @@ var _next_track_time: float = 0.0
 func _ready() -> void:
 	# apply speed upgrades once, when the level spawns the ball
 	speed *= RunState.ball_speed_mult
-	scale *= RunState.ball_size_mult
+	scale *= RunState.ball_size_mult * base_size
 	damage += RunState.ball_damage_bonus
 	_start_position = global_position
 	launch()
@@ -74,21 +94,61 @@ func set_start(pos: Vector2, direction: Vector2) -> void:
 	launch_direction = direction
 	launch()
 
-## picks a random launch angle within 45 degrees of launch_direction, holds the
-## ball still for aim_time with an arrow showing that way, then sends it off
+## holds the ball still with the arrow showing so the player can aim it:
+## the move keys swing the arrow and ui_accept (Space / Enter) fires. if
+## nobody fires within aim_time it goes off on its own
 func launch() -> void:
-	_aim(launch_direction.angle() + randf_range(-PI * 0.25, PI * 0.25))
+	# starts a little off straight ahead, so a shot nobody steers doesn't
+	# just go straight out and straight back
+	var side := 1.0 if randf() < 0.5 else -1.0
+	_aim(deg_to_rad(randf_range(10.0, 30.0)) * side)
 
-# stops the ball where it is and shows the arrow at angle for aim_time, then launches
-func _aim(angle: float) -> void:
-	_launch_velocity = Vector2.RIGHT.rotated(angle) * speed
+# stops the ball where it is and shows the arrow, swung offset radians away
+# from launch_direction
+func _aim(offset: float) -> void:
+	_aim_offset = offset
 	velocity = Vector2.ZERO
 	_aim_left = aim_time
 	_reset_loop_check()
+	if paddle:
+		# the move keys aim the arrow for now, so the paddle waits
+		paddle.frozen = true
+		# the ball sits on the paddle like an orb it's holding, wherever the
+		# paddle is, and shoots straight out from it into the room
+		var radius: float = $CollisionShape2D.shape.radius * scale.x
+		var spot := paddle.hold_spot(radius)
+		global_position = spot[0]
+		launch_direction = spot[1]
+	_arrow.show()
+	_point_arrow()
+
+# swings the arrow toward whichever move key is held
+func _steer_arrow(delta: float) -> void:
+	var input := Vector2(
+		Input.get_axis("move_left", "move_right"),
+		Input.get_axis("move_up", "move_down"))
+	# how much the keys push to the arrow's right. works whichever wall the
+	# paddle is on: left/right aims on the top and bottom, up/down on the sides
+	var turn := input.dot(launch_direction.rotated(PI / 2))
+	var limit := deg_to_rad(max_aim_angle)
+	_aim_offset = clampf(_aim_offset + turn * deg_to_rad(aim_turn_speed) * delta, -limit, limit)
+	_point_arrow()
+
+# lines the arrow (and the shot it shows) up with _aim_offset
+func _point_arrow() -> void:
+	var angle := launch_direction.angle() + _aim_offset
+	_launch_velocity = Vector2.RIGHT.rotated(angle) * speed
 	# the arrow art points right, so rotating it by the angle aims it
 	_arrow.rotation = angle
-	_arrow.show()
 	_update_arrow()
+
+# sends the ball off the way the arrow points and lets the paddle move again
+func _fire() -> void:
+	_aim_left = 0.0
+	_arrow.hide()
+	velocity = _launch_velocity
+	if paddle:
+		paddle.frozen = false
 
 ## puts the ball back at its start and relaunches it (with the aim arrow first)
 func respawn() -> void:
@@ -100,11 +160,12 @@ func _physics_process(delta: float) -> void:
 	# counting down on the physics clock means the pause menu freezes it too
 	if _aim_left > 0.0:
 		_aim_left -= delta
-		if _aim_left <= 0.0:
-			_arrow.hide()
-			velocity = _launch_velocity
-		else:
-			_update_arrow()
+		_steer_arrow(delta)
+		# the first moment is skipped so the Enter that picked an upgrade or
+		# pressed Play can't also fire the ball
+		var fired := Input.is_action_just_pressed("ui_accept") and aim_time - _aim_left > 0.2
+		if fired or _aim_left <= 0.0:
+			_fire()
 		return
 
 	_move_time += delta
@@ -182,15 +243,10 @@ func _reset_loop_check() -> void:
 	_track.clear()
 	_next_track_time = 0.0
 
-# stuck in a loop too long: freeze, show the arrow, and fire off somewhere random
+# stuck in a loop too long: the ball comes back to its start for a fresh
+# aimed shot. no life lost
 func _unstick() -> void:
-	var angle := randf() * TAU
-	# straight along an axis is the easiest way to end up in another loop, so
-	# keep it at least 10 degrees off horizontal and vertical
-	var off_axis := fposmod(angle, PI * 0.5)
-	var margin := deg_to_rad(10.0)
-	angle += clampf(off_axis, margin, PI * 0.5 - margin) - off_axis
-	_aim(angle)
+	respawn()
 
 # nudges the arrow back and forth in whole pixels and blinks it just before launch
 func _update_arrow() -> void:
@@ -202,10 +258,11 @@ func _update_arrow() -> void:
 
 # Breakout-style aiming: where the ball lands on the paddle picks the angle it leaves at.
 # Centre sends it straight up, the edges send it out at max_bounce_angle.
-func _bounce_off_paddle(paddle: Player) -> Vector2:
+func _bounce_off_paddle(hit_paddle: Player) -> Vector2:
 	# the paddle can sit on any wall and bend round corners, so it works out
-	# which way its face points where we hit it
-	return paddle.bounce_direction(global_position, deg_to_rad(max_bounce_angle)) * speed
+	# which way its face points where we hit it. it also adds a nudge the way
+	# it's moving
+	return hit_paddle.bounce_direction(global_position, deg_to_rad(max_bounce_angle)) * speed
 
 
 func apply_upgrade(upgrade: StringName) -> String:
@@ -214,16 +271,28 @@ func apply_upgrade(upgrade: StringName) -> String:
 			RunState.ball_speed_mult *= 1.25
 			speed *= 1.25
 			velocity = velocity.normalized() * speed
-			return "FAST BALL  +25% SPEED"
+			return "Fast ball  25% faster"
 		&"size":
 			RunState.ball_size_mult *= 1.25
 			_scale_ball(1.25)
-			return "BIG BALL  +25% SIZE"
+			return "Big ball  25% bigger"
 		&"power":
 			RunState.ball_damage_bonus += 1
 			damage += 1
-			return "POWER BALL  +1 DAMAGE"
+			return "Power ball  1 more damage"
 	return ""
+
+
+## quick white flash and swell on the sprite, so it's clear the ball just
+## got an upgrade. only the sprite pulses, the hitbox stays put
+func flash_upgrade() -> void:
+	var sprite: Sprite2D = $Sprite2D
+	sprite.scale = Vector2.ONE * upgrade_pulse_size
+	sprite.modulate = Color(3.0, 3.0, 3.0)
+	var tween := create_tween().set_parallel()
+	tween.tween_property(sprite, "scale", Vector2.ONE, upgrade_pulse_time) \
+		.set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(sprite, "modulate", Color.WHITE, upgrade_pulse_time)
 
 
 func _scale_ball(multiplier: float) -> void:
