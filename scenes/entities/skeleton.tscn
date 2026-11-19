@@ -13,7 +13,7 @@ size = Vector2(3, 24)
 
 [node name="Skeleton" unique_id=440440417 instance=ExtResource("1_883aw")]
 script = ExtResource("3_skel")
-max_health = 4
+max_health = 2
 death_effect = ExtResource("2_m1fgu")
 
 [node name="Sprite2D" parent="." index="0" unique_id=2144103570]
