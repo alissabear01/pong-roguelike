@@ -36,6 +36,11 @@ extends CharacterBody2D
 ## seconds the ball can spend stuck in a repeating bounce loop before it relaunches
 @export var loop_timeout: float = 5.0
 
+## aim assist: a ball bouncing off the paddle during play heads straight for
+## an enemy or chest within this many degrees of its path. never touches the
+## hand-aimed shot
+@export var aim_assist_angle: float = 10.0
+
 ## straight ahead for the arrow: into the room, away from the paddle
 var launch_direction := Vector2.UP
 
@@ -64,6 +69,8 @@ const LOOP_HISTORY_SIZE := 32
 const LOOP_STRIP_WIDTH := 64.0
 # how often (s) we sample the ball's position for the strip check
 const TRACK_INTERVAL := 0.1
+# seconds between the beeps while the aim arrow is showing
+const BEEP_INTERVAL := 0.5
 
 # seconds the ball has been moving since its last launch, used to timestamp bounces
 var _move_time: float = 0.0
@@ -83,6 +90,8 @@ func _ready() -> void:
 	speed *= RunState.ball_speed_mult
 	scale *= RunState.ball_size_mult * base_size
 	damage += RunState.ball_damage_bonus
+	# lets the death zone tell whether this was the last ball in play
+	add_to_group("balls")
 	_start_position = global_position
 	launch()
 
@@ -93,6 +102,13 @@ func set_start(pos: Vector2, direction: Vector2) -> void:
 	global_position = pos
 	launch_direction = direction
 	launch()
+
+## like set_start but doesn't bring the ball to the paddle: just remembers
+## where it should come back to if it's ever the last ball and gets lost.
+## for extra balls out of chests
+func set_respawn(pos: Vector2, direction: Vector2) -> void:
+	_start_position = pos
+	launch_direction = direction
 
 ## holds the ball still with the arrow showing so the player can aim it:
 ## the move keys swing the arrow and ui_accept (Space / Enter) fires. if
@@ -149,16 +165,39 @@ func _fire() -> void:
 	velocity = _launch_velocity
 	if paddle:
 		paddle.frozen = false
+	# higher beep: go!
+	Sfx.play(&"aim_beep", 1.6)
 
 ## puts the ball back at its start and relaunches it (with the aim arrow first)
 func respawn() -> void:
 	global_position = _start_position
 	launch()
 
+## sends the ball off from pos straight away in a random direction, no aim
+## arrow. for balls breaking out of a chest. respawns still go wherever
+## set_start put them
+func release(pos: Vector2) -> void:
+	global_position = pos
+	_aim_left = 0.0
+	_arrow.hide()
+	_reset_loop_check()
+	velocity = Vector2.RIGHT.rotated(_random_angle()) * speed
+	# chest balls never wait on the paddle, so make sure it isn't held up
+	if paddle and not _anyone_aiming():
+		paddle.frozen = false
+
+# true if some ball (this one included) is sat on the paddle being aimed
+func _anyone_aiming() -> bool:
+	for ball: Ball in get_tree().get_nodes_in_group("balls"):
+		if ball._aim_left > 0.0:
+			return true
+	return false
+
 # runs 60x per s on physics clock. movement is here
 func _physics_process(delta: float) -> void:
 	# counting down on the physics clock means the pause menu freezes it too
 	if _aim_left > 0.0:
+		var before := _aim_left
 		_aim_left -= delta
 		_steer_arrow(delta)
 		# the first moment is skipped so the Enter that picked an upgrade or
@@ -166,6 +205,9 @@ func _physics_process(delta: float) -> void:
 		var fired := Input.is_action_just_pressed("ui_accept") and aim_time - _aim_left > 0.2
 		if fired or _aim_left <= 0.0:
 			_fire()
+		# a beep as the arrow appears and every half second after
+		elif before >= aim_time or floori(before / BEEP_INTERVAL) > floori(_aim_left / BEEP_INTERVAL):
+			Sfx.play(&"aim_beep")
 		return
 
 	_move_time += delta
@@ -174,23 +216,47 @@ func _physics_process(delta: float) -> void:
 		return
 
 	# try to move. if hit something, return collision info null if not. delta converts px per s to px this frame
-	var collision := move_and_collide(velocity * delta)
-	if collision == null:
-		return
+	var motion := velocity * delta
+	# a few pierces a frame at most, so nothing odd can ever loop forever here
+	for i in 4:
+		var collision := move_and_collide(motion)
+		if collision == null:
+			return
+		if not _hit(collision):
+			return
+		# smashed straight through it, so carry on with the rest of this frame's move
+		motion = collision.get_remainder()
 
+# Reacts to bumping into something. Returns true if the ball broke it and
+# keeps going (pierce), false if it bounced.
+func _hit(collision: KinematicCollision2D) -> bool:
 	var collider := collision.get_collider()
 	if collider is Player:
 		velocity = _bounce_off_paddle(collider)
 		# the player is steering it, so whatever it was doing isn't a loop
 		_reset_loop_check()
-	else:
-		# get_normal() is direction the suface faces. bounce() reflects our velocity off it
-		velocity = velocity.bounce(collision.get_normal())
-		_record_bounce()
+		Sfx.play(&"ball_hit", 1.25, 0.03)
+		return false
 
-		# if it was something breakable, damage it
-		if collider.has_method("take_damage"):
-			collider.take_damage(damage)
+	# the boss's paddle aims its returns the same way ours does
+	if collider.has_method("bounce_direction"):
+		velocity = collider.bounce_direction(global_position, deg_to_rad(max_bounce_angle)) * speed
+		Sfx.play(&"ball_hit", 0.8, 0.03)
+		return false
+
+	# take_damage returns true when that hit killed it (or broke a chest open).
+	# then there's nothing left to bounce off, so fly on through
+	if collider.has_method("take_damage") and collider.take_damage(damage):
+		add_collision_exception_with(collider)
+		return true
+
+	# get_normal() is direction the suface faces. bounce() reflects our velocity off it
+	velocity = velocity.bounce(collision.get_normal())
+	_record_bounce()
+	# enemies make their own hurt sound, so only blip for plain bounces
+	if not collider.has_method("take_damage"):
+		Sfx.play(&"ball_hit", 1.0, 0.05)
+	return false
 
 # The ball moves at a constant speed and reflects perfectly, so if it bounces
 # off the same spot heading the same way as before, it's going to repeat that
@@ -243,10 +309,23 @@ func _reset_loop_check() -> void:
 	_track.clear()
 	_next_track_time = 0.0
 
-# stuck in a loop too long: the ball comes back to its start for a fresh
-# aimed shot. no life lost
+# stuck in a loop too long. the only ball left comes back to the paddle for a
+# fresh aimed shot (no life lost). an extra ball with others still in play
+# just fires off somewhere new where it is
 func _unstick() -> void:
-	respawn()
+	if get_tree().get_nodes_in_group("balls").size() > 1:
+		_reset_loop_check()
+		velocity = Vector2.RIGHT.rotated(_random_angle()) * speed
+	else:
+		respawn()
+
+# any direction, but at least 10 degrees off horizontal and vertical:
+# straight along an axis is the easiest way to end up in a loop
+func _random_angle() -> float:
+	var angle := randf() * TAU
+	var off_axis := fposmod(angle, PI * 0.5)
+	var margin := deg_to_rad(10.0)
+	return angle + clampf(off_axis, margin, PI * 0.5 - margin) - off_axis
 
 # nudges the arrow back and forth in whole pixels and blinks it just before launch
 func _update_arrow() -> void:
@@ -261,30 +340,30 @@ func _update_arrow() -> void:
 func _bounce_off_paddle(hit_paddle: Player) -> Vector2:
 	# the paddle can sit on any wall and bend round corners, so it works out
 	# which way its face points where we hit it. it also adds a nudge the way
-	# it's moving
-	return hit_paddle.bounce_direction(global_position, deg_to_rad(max_bounce_angle)) * speed
+	# it's moving, then aim assist can pull it onto a target
+	var dir := hit_paddle.bounce_direction(global_position, deg_to_rad(max_bounce_angle))
+	return _assist_aim(dir) * speed
+
+# Aim assist. Each pixel of paddle swings the shot about 3 degrees, finer than
+# anyone can aim, so if a target is within aim_assist_angle of dir, head
+# straight at the closest one (by angle) instead.
+func _assist_aim(dir: Vector2) -> Vector2:
+	var best := deg_to_rad(aim_assist_angle)
+	var result := dir
+	var targets := get_tree().get_nodes_in_group("enemies") \
+		+ get_tree().get_nodes_in_group("upgrade_chests")
+	for target: Node2D in targets:
+		var to_target := target.global_position - global_position
+		var off := absf(dir.angle_to(to_target))
+		if off < best:
+			best = off
+			result = to_target.normalized()
+	return result
 
 
-func apply_upgrade(upgrade: StringName) -> String:
-	match upgrade:
-		&"speed":
-			RunState.ball_speed_mult *= 1.25
-			speed *= 1.25
-			velocity = velocity.normalized() * speed
-			return "Fast ball  25% faster"
-		&"size":
-			RunState.ball_size_mult *= 1.25
-			_scale_ball(1.25)
-			return "Big ball  25% bigger"
-		&"power":
-			RunState.ball_damage_bonus += 1
-			damage += 1
-			return "Power ball  1 more damage"
-	return ""
-
-
-## quick white flash and swell on the sprite, so it's clear the ball just
-## got an upgrade. only the sprite pulses, the hitbox stays put
+## quick white flash and swell on the sprite, so it's clear something just
+## happened to this ball (like popping out of a chest). only the sprite
+## pulses, the hitbox stays put
 func flash_upgrade() -> void:
 	var sprite: Sprite2D = $Sprite2D
 	sprite.scale = Vector2.ONE * upgrade_pulse_size
@@ -293,7 +372,3 @@ func flash_upgrade() -> void:
 	tween.tween_property(sprite, "scale", Vector2.ONE, upgrade_pulse_time) \
 		.set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
 	tween.tween_property(sprite, "modulate", Color.WHITE, upgrade_pulse_time)
-
-
-func _scale_ball(multiplier: float) -> void:
-	scale *= multiplier
