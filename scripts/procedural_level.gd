@@ -26,13 +26,19 @@ const SIDES: Array[Vector2i] = [Vector2i.DOWN, Vector2i.UP, Vector2i.LEFT, Vecto
 
 ## room interior size in tiles, rolled between these (inclusive).
 ## the screen fits 30x16 tiles, walls included, so stay under 28x14
-@export var min_room_size := Vector2i(16, 9)
-@export var max_room_size := Vector2i(24, 12)
+@export var min_room_size := Vector2i(14, 8)
+@export var max_room_size := Vector2i(20, 10)
 
-## hole length in tiles, rolled between these (inclusive). the paddle slides
-## inside the hole and the wall on either end stops it. the shortest length
-## holds for corner holes too, counting both arms and the corner tile
-@export var hole_size := Vector2i(10, 14)
+## x is the shortest the hole can ever be, in tiles. the paddle slides inside
+## the hole and the wall on either end stops it. holds for corner holes too,
+## counting both arms and the corner tile. (y isn't used any more: straight
+## holes are sized by hole_end_wall and corner ones by corner_arm_size)
+@export var hole_size := Vector2i(6, 12)
+
+## tiles of wall left at each end of a straight hole, rolled between these
+## (inclusive) for each end. the hole takes up the rest of the side, so the
+## ball nearly always comes back to the paddle and not to wall. at least 1
+@export var hole_end_wall := Vector2i(1, 3)
 
 ## tiles of slack the hole always has beyond the paddle's length, so a
 ## big paddle upgrade can't leave it with nowhere to move
@@ -49,6 +55,8 @@ const SIDES: Array[Vector2i] = [Vector2i.DOWN, Vector2i.UP, Vector2i.LEFT, Vecto
 ## enemies on level 1, and how many more each level after that
 @export var base_enemy_count: int = 2
 @export var enemies_per_level: int = 1
+## most enemies a room can have, however far into the run you are
+@export var max_enemy_count: int = 6
 
 ## distance between the spots enemies can spawn on, in px.
 ## big enough that a skeleton never overlaps its neighbour
@@ -57,6 +65,13 @@ const SIDES: Array[Vector2i] = [Vector2i.DOWN, Vector2i.UP, Vector2i.LEFT, Vecto
 ## px of open floor kept clear on the hole's sides for the paddle and ball.
 ## enemies spawn and move only outside it
 @export var paddle_clearance: float = 72.0
+
+## the "Extra ball" text that pops up where a chest broke: text size, colour,
+## how far it floats up (px) and how long until it's gone (s)
+@export var popup_font_size: int = 16
+@export var popup_color := Color(1.0, 0.92, 0.55)
+@export var popup_rise: float = 18.0
+@export var popup_time: float = 1.6
 
 ## px from a wall a spawn spot has to be to count as out in the open.
 ## enemies (and chests) tucked by a wall or in a corner are slow to hit, so
@@ -170,10 +185,16 @@ func _cut_straight_hole(interior: Rect2i, paddle_tiles: int) -> void:
 		sides = [Vector2i.DOWN, Vector2i.UP]
 	var hole_side := sides[_rng.randi_range(0, sides.size() - 1)]
 
+	# the hole runs nearly the whole side, with a short stub of wall left at
+	# each end for the paddle to stop against
 	var side_length := _side_length(interior, hole_side)
-	var longest_hole := mini(hole_size.y, side_length - 2)
-	var length := _rng.randi_range(mini(shortest_hole, longest_hole), longest_hole)
-	var start := _rng.randi_range(1, side_length - length - 1)
+	var start := _rng.randi_range(maxi(hole_end_wall.x, 1), maxi(hole_end_wall.y, 1))
+	var end_wall := _rng.randi_range(maxi(hole_end_wall.x, 1), maxi(hole_end_wall.y, 1))
+	var length := side_length - start - end_wall
+	if length < shortest_hole:
+		# side too short for stubs that big, so make them one tile each
+		start = 1
+		length = maxi(side_length - 2, 1)
 
 	# first wall cell of the side, and which way the side runs
 	var first: Vector2i
@@ -249,21 +270,22 @@ func _side_length(interior: Rect2i, side: Vector2i) -> int:
 	return interior.size.x if side.y != 0 else interior.size.y
 
 
-## Lays the paddle on the hole's track and puts the ball a little way in
-## front of where it starts.
+## Lays the paddle on the hole's track and sits the ball on it, ready to aim.
 func _place_paddle_and_ball() -> void:
 	var outs: Array[Vector2] = []
 	for side in _hole_sides:
 		outs.append(Vector2(side))
 	player.set_track(_track, outs, _start_segment)
 
-	# somewhere over the middle half of the paddle's starting wall, so the
-	# first launch is always catchable
+	# the ball waits just inside the room in front of the paddle, like an orb
+	# it's holding, and the player shoots it into the room. (once it knows the
+	# paddle it snaps onto it anyway, this is just a sensible fallback)
 	var out := outs[_start_segment]
-	var segment := _track[_start_segment + 1] - _track[_start_segment]
-	_ball_start = player.position - out * (TILE_SIZE / 2.0 + 56) \
-		+ segment * _rng.randf_range(-0.25, 0.25)
-	_ball_direction = out
+	_ball_start = player.position - out * (TILE_SIZE / 2.0 + 20)
+	# never in the wall, even if a huge paddle got pushed along to a corner
+	_ball_start = _ball_start.clamp(_room.position + Vector2(12, 12), _room.end - Vector2(12, 12))
+	_ball_direction = -out
+	ball.paddle = player
 	ball.set_start(_ball_start, _ball_direction)
 
 
@@ -315,7 +337,7 @@ func _spawn_enemies() -> void:
 		_shuffle(group)
 		cells.append_array(group)
 
-	var count := base_enemy_count + enemies_per_level * (LevelManager.level_number - 1)
+	var count := mini(base_enemy_count + enemies_per_level * (LevelManager.level_number - 1), max_enemy_count)
 	# grid cells that are filled, or right beside a filled one
 	var blocked := {}
 
@@ -389,20 +411,63 @@ func _too_close(pos: Vector2, nodes: Array, distance: float) -> bool:
 
 func _on_chest_broken(pos: Vector2) -> void:
 	_release_ball(pos)
+	_popup("Extra ball", pos)
 	_chest_timer.start(chest_interval)
 
+
 ## A new ball bursts out of a broken chest at pos, already moving in a random
-## direction. If it's ever the last ball left and gets lost, it respawns in
-## front of the paddle like the first one.
+## direction, with a flash so you spot it. It never waits on the paddle. If
+## it's ever the last ball left and gets lost, it comes back to the paddle
+## for an aimed shot like the first one.
 func _release_ball(pos: Vector2) -> void:
 	if ball_scene == null:
 		push_warning("no ball_scene set on %s" % name)
 		return
 	var new_ball: Ball = ball_scene.instantiate()
 	add_child(new_ball)
-	# set_start shows the aim arrow, release straight away skips it
-	new_ball.set_start(_ball_start, _ball_direction)
+	# paddle set after it's in the tree, so its own first launch can't grab it
+	new_ball.paddle = player
+	new_ball.set_respawn(_ball_start, _ball_direction)
 	new_ball.release(pos)
+	new_ball.flash_upgrade()
+
+
+## Pops some text up at a spot in the room (global). It floats up and fades,
+## but always stays on screen.
+func _popup(text: String, at: Vector2) -> void:
+	var label := Label.new()
+	label.text = text
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size", popup_font_size)
+	label.add_theme_color_override("font_color", popup_color)
+	label.add_theme_color_override("font_shadow_color", Color(0.02, 0.03, 0.07))
+	label.add_theme_constant_override("shadow_offset_x", 1)
+	label.add_theme_constant_override("shadow_offset_y", 1)
+	label.z_index = 50
+	add_child(label)
+	label.size = label.get_minimum_size()
+
+	# centred just above the spot, then nudged so all of it, rise included,
+	# stays inside the screen
+	var screen := Rect2(camera.get_screen_center_position() - get_viewport_rect().size / 2,
+		get_viewport_rect().size).grow(-4.0)
+	var start := (at - global_position) + Vector2(-label.size.x / 2, -label.size.y - 8)
+	start.x = clampf(start.x, screen.position.x, screen.end.x - label.size.x)
+	start.y = clampf(start.y, screen.position.y + popup_rise, screen.end.y - label.size.y)
+	label.position = start.round()
+
+	# pops in a bit big and overbright, then drifts up and fades
+	label.pivot_offset = label.size / 2
+	label.scale = Vector2(1.4, 1.4)
+	label.modulate = Color(2.0, 2.0, 2.0)
+	var tween := create_tween().set_parallel()
+	tween.tween_property(label, "scale", Vector2.ONE, 0.15) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(label, "modulate", Color.WHITE, 0.15)
+	tween.tween_property(label, "position:y", start.y - popup_rise, popup_time) \
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(label, "modulate:a", 0.0, popup_time * 0.35).set_delay(popup_time * 0.65)
+	tween.chain().tween_callback(label.queue_free)
 
 
 # Array.shuffle() uses the global RNG, so do it by hand to keep room_seed repeatable

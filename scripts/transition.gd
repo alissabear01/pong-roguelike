@@ -15,13 +15,19 @@ extends CanvasLayer
 ## seconds for the screen to go fully dark, and the same again coming back
 @export var fade_time: float = 0.45
 
+## how dark the strip behind the banner text gets (0 = invisible, 1 = solid),
+## so the text stays readable over enemies and walls
+@export var strip_alpha: float = 0.75
+
 @onready var fade: ColorRect = $Fade
+@onready var strip: ColorRect = $BannerStrip
 @onready var banner: Label = $Banner
 
 
 func _ready() -> void:
 	# start clear: no dimming, no text
 	fade.color.a = 0.0
+	strip.color.a = 0.0
 	banner.text = ""
 	banner.modulate.a = 0.0
 
@@ -35,6 +41,8 @@ func show_banner(text: String) -> void:
 	# starts overbright and settles to normal, so it reads as a flash
 	banner.modulate = Color(2.0, 2.0, 2.0, 0.0)
 	tween.tween_property(banner, "modulate", Color.WHITE, banner_pop_time)
+	# the dark strip fades in behind it at the same time
+	tween.tween_property(strip, "color:a", strip_alpha, banner_pop_time)
 	tween.tween_method(_set_banner_drop, banner_pop_rise, 0.0, banner_pop_time) \
 		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	await tween.finished
@@ -43,10 +51,11 @@ func show_banner(text: String) -> void:
 	await get_tree().create_timer(banner_hold).timeout
 
 
-## Fades just the banner away, leaving the screen as it is.
+## Fades just the banner (and its strip) away, leaving the screen as it is.
 func hide_banner() -> void:
-	var tween := create_tween()
+	var tween := create_tween().set_parallel()
 	tween.tween_property(banner, "modulate:a", 0.0, fade_time)
+	tween.tween_property(strip, "color:a", 0.0, fade_time)
 	await tween.finished
 	banner.text = ""
 
@@ -56,6 +65,7 @@ func fade_out() -> void:
 	var tween := create_tween().set_parallel()
 	tween.tween_property(fade, "color:a", 1.0, fade_time)
 	tween.tween_property(banner, "modulate:a", 0.0, fade_time)
+	tween.tween_property(strip, "color:a", 0.0, fade_time)
 	await tween.finished
 	banner.text = ""
 

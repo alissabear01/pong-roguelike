@@ -72,7 +72,7 @@ offset_right = -66.0
 offset_bottom = 21.0
 theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
 theme_override_font_sizes/font_size = 16
-text = "BOSS LEVEL"
+text = "Boss level"
 horizontal_alignment = 2
 vertical_alignment = 1
 

@@ -53,7 +53,9 @@ func _ready() -> void:
 	boss.defeated.connect(_on_boss_defeated)
 
 	_ball_start = player.position + Vector2.UP * (TILE_SIZE / 2.0 + 56)
-	ball.set_start(_ball_start, Vector2.DOWN)
+	# the ball sits on our paddle and gets aimed up the court, same as a normal level
+	ball.paddle = player
+	ball.set_start(_ball_start, Vector2.UP)
 
 	# a strip past each open end: ours costs balls, the boss's costs it health
 	_place_strip(death_zone, bottom_y + TILE_SIZE / 2.0, 1.0)
@@ -110,7 +112,7 @@ func _on_boss_health_changed(health: int, max_health: int) -> void:
 
 func _on_boss_defeated() -> void:
 	Sfx.play(&"boss_defeated")
-	LevelManager.level_cleared("BOSS DEFEATED")
+	LevelManager.level_cleared("Boss defeated")
 
 
 ## Puts a chest near the middle of the court, unless a ball is right there.
@@ -142,7 +144,11 @@ func _on_chest_broken(pos: Vector2) -> void:
 	if ball_scene:
 		var new_ball: Ball = ball_scene.instantiate()
 		add_child(new_ball)
-		# set_start shows the aim arrow, release straight away skips it
-		new_ball.set_start(_ball_start, Vector2.DOWN)
+		# paddle set after it is in the tree so its own first launch cannot grab
+		# it, and it never waits on the paddle. if it ends up the last ball it
+		# comes back for an aimed shot like the first one
+		new_ball.paddle = player
+		new_ball.set_respawn(_ball_start, Vector2.UP)
 		new_ball.release(pos)
+		new_ball.flash_upgrade()
 	_chest_timer.start(chest_interval)

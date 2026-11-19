@@ -32,7 +32,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## Called by level.gd once every enemy in the level is dead, and by the boss
 ## level (with its own banner) once the boss is beaten
-func level_cleared(banner: String = "LEVEL CLEAR") -> void:
+func level_cleared(banner: String = "Level clear") -> void:
 	if _changing:
 		return
 	_changing = true
@@ -47,10 +47,11 @@ func level_cleared(banner: String = "LEVEL CLEAR") -> void:
 	RunState.apply_upgrade(id)
 
 	level_number += 1
+	# the level we're heading into is a boss one on 5, 10, 15...
 	var boss_next := level_number % BOSS_EVERY == 0 and not _in_boss
 	_in_boss = boss_next
 	if boss_next:
-		await _swap_scene(BOSS_SCENE, "BOSS LEVEL")
+		await _swap_scene(BOSS_SCENE, "Boss level")
 	else:
 		await _swap_scene(LEVEL_SCENE)
 
@@ -65,7 +66,7 @@ func go_to_boss() -> void:
 	_changing = true
 	_in_boss = true
 	get_tree().paused = true
-	await _swap_scene(BOSS_SCENE, "BOSS LEVEL")
+	await _swap_scene(BOSS_SCENE, "Boss level")
 
 
 ## Called by the main menu's Play button. Fresh run from level 1
@@ -87,7 +88,7 @@ func game_over() -> void:
 	_changing = true
 
 	get_tree().paused = true
-	await Transition.show_banner("GAME OVER")
+	await Transition.show_banner("Game over")
 	_in_boss = false
 	# roguelike rules: back to the title, the next Play starts a brand new run
 	await _swap_scene(MAIN_MENU)
