@@ -20,6 +20,7 @@ region = Rect2(0, 32, 16, 16)
 script = ExtResource("1_proc")
 enemy_scenes = Array[PackedScene]([ExtResource("6_uvc87"), ExtResource("7_qdh5e")])
 chest_scene = ExtResource("11_chest")
+ball_scene = ExtResource("4_i2aat")
 
 [node name="Background" type="CanvasLayer" parent="."]
 layer = -1

@@ -1,0 +1,12 @@
+Sound effects from "The Essential Retro Video Game Sound Effects Collection [512 sounds]"
+by Juhani Junkala, released under CC0 (public domain, no attribution needed).
+https://opengameart.org/content/512-sound-effects-8-bit-style
+
+ball_hit.wav        General Sounds/Simple Bleeps/sfx_sounds_Blip7.wav
+enemy_hurt.wav      General Sounds/Simple Damage Sounds/sfx_damage_hit2.wav
+life_lost.wav       General Sounds/Negative Sounds/sfx_sounds_negative2.wav
+aim_beep.wav        General Sounds/Menu Sounds/sfx_menu_move1.wav
+enemy_defeated.wav  Explosions/Shortest/sfx_exp_shortest_soft1.wav
+chest_open.wav      General Sounds/Coins/sfx_coin_double1.wav
+boss_hurt.wav       General Sounds/Negative Sounds/sfx_sounds_damage1.wav
+boss_defeated.wav   General Sounds/Fanfares/sfx_sounds_fanfare1.wav

@@ -51,6 +51,15 @@ func show_banner(text: String) -> void:
 	await get_tree().create_timer(banner_hold).timeout
 
 
+## Fades just the banner (and its strip) away, leaving the screen as it is.
+func hide_banner() -> void:
+	var tween := create_tween().set_parallel()
+	tween.tween_property(banner, "modulate:a", 0.0, fade_time)
+	tween.tween_property(strip, "color:a", 0.0, fade_time)
+	await tween.finished
+	banner.text = ""
+
+
 ## Darkens the screen to solid, taking any visible banner with it.
 func fade_out() -> void:
 	var tween := create_tween().set_parallel()

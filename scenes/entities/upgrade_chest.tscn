@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://dh2ekbdav8k01" path="res://scripts/upgrade_chest.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://crylvfh1u4ayo" path="res://assets/sprites/spritesheet_base.png" id="2_texture"]
-
+[ext_resource type="PackedScene" path="res://scenes/effects/chest_particles.tscn" id="3_particles"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_chest"]
 size = Vector2(16, 16)
@@ -11,6 +11,7 @@ size = Vector2(16, 16)
 collision_layer = 1
 collision_mask = 0
 script = ExtResource("1_script")
+break_effect = ExtResource("3_particles")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 texture = ExtResource("2_texture")

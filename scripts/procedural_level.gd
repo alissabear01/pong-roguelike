@@ -14,14 +14,15 @@ const SIDES: Array[Vector2i] = [Vector2i.DOWN, Vector2i.UP, Vector2i.LEFT, Vecto
 ## enemy scenes to spawn, one picked at random for each enemy
 @export var enemy_scenes: Array[PackedScene] = []
 
-## chest placed in every room; opening it gives the ball a random upgrade
+## chest that turns up during the room; breaking it lets out another ball
 @export var chest_scene: PackedScene
 
-## spawned on its own (no enemies, no chest) on boss levels, see LevelManager.BOSS_EVERY
-@export var boss_scene: PackedScene
+## seconds after the room starts, or after the last chest broke, before a
+## new chest turns up. only one chest is ever out at a time
+@export var chest_interval: float = 5.0
 
-## px between the boss's body and the wall across from the paddle
-@export var boss_wall_gap: float = 8.0
+## the ball scene, for the extra balls that come out of chests
+@export var ball_scene: PackedScene
 
 ## room interior size in tiles, rolled between these (inclusive).
 ## the screen fits 30x16 tiles, walls included, so stay under 28x14
@@ -65,12 +66,18 @@ const SIDES: Array[Vector2i] = [Vector2i.DOWN, Vector2i.UP, Vector2i.LEFT, Vecto
 ## enemies spawn and move only outside it
 @export var paddle_clearance: float = 72.0
 
-## the upgrade name that pops up when a chest opens: text size, colour,
+## the "Extra ball" text that pops up where a chest broke: text size, colour,
 ## how far it floats up (px) and how long until it's gone (s)
 @export var popup_font_size: int = 16
 @export var popup_color := Color(1.0, 0.92, 0.55)
 @export var popup_rise: float = 18.0
 @export var popup_time: float = 1.6
+
+## px from a wall a spawn spot has to be to count as out in the open.
+## enemies (and chests) tucked by a wall or in a corner are slow to hit, so
+## spots by a wall are only used once the open ones run out, and corner
+## spots last of all
+@export var wall_margin: float = 40.0
 
 ## 0 rolls a new room every time, anything else always builds the same room
 @export var room_seed: int = 0
@@ -91,6 +98,15 @@ var _hole_sides: Array[Vector2i] = []
 var _track := PackedVector2Array()
 # which segment of the track the paddle starts on
 var _start_segment := 0
+# where every ball respawns, and which way it launches from there
+var _ball_start: Vector2
+var _ball_direction: Vector2
+# the open interior in px
+var _room: Rect2
+# the room minus the paddle's clearance: where enemies and chests can go
+var _play_zone: Rect2
+# counts down to the next chest. runs on the physics clock, so pausing stops it
+var _chest_timer := Timer.new()
 
 
 func _ready() -> void:
@@ -99,28 +115,35 @@ func _ready() -> void:
 	# printed so a weird room can be rebuilt by pasting this into room_seed
 	print("level %d, room seed %d" % [LevelManager.level_number, _rng.seed])
 
-	var boss_level := LevelManager.is_boss_level()
-	var room := _build_walls(boss_level)
-	_cut_hole(room)
-	_place_paddle_and_ball(room)
+	_room = _build_walls()
+	_cut_hole(_room)
+	# shave the clearance off whichever sides the hole is on
+	_play_zone = _room.grow_individual(
+		-paddle_clearance if Vector2i.LEFT in _hole_sides else 0.0,
+		-paddle_clearance if Vector2i.UP in _hole_sides else 0.0,
+		-paddle_clearance if Vector2i.RIGHT in _hole_sides else 0.0,
+		-paddle_clearance if Vector2i.DOWN in _hole_sides else 0.0)
+	_place_paddle_and_ball()
 	_place_death_zone()
-	if boss_level:
-		_spawn_boss(room)
-	else:
-		_spawn_enemies(room)
-		_spawn_chest(room)
+	_spawn_enemies()
+
+	# no chest at the start, the first one turns up after chest_interval
+	_chest_timer.one_shot = true
+	_chest_timer.process_callback = Timer.TIMER_PROCESS_PHYSICS
+	_chest_timer.timeout.connect(_spawn_chest)
+	add_child(_chest_timer)
+	_chest_timer.start(chest_interval)
 
 	# enemies are in the tree now, so the base level can count them
 	super._ready()
 
 
 ## Rolls a room size, puts a wall on every side of it and returns the open
-## interior in pixels. Boss rooms are always the biggest size.
-func _build_walls(boss_level := false) -> Rect2:
-	var smallest := max_room_size if boss_level else min_room_size
+## interior in pixels.
+func _build_walls() -> Rect2:
 	var size := Vector2i(
-		_rng.randi_range(smallest.x, max_room_size.x),
-		_rng.randi_range(smallest.y, max_room_size.y))
+		_rng.randi_range(min_room_size.x, max_room_size.x),
+		_rng.randi_range(min_room_size.y, max_room_size.y))
 	# top-left interior cell, picked so the room sits around the origin
 	var origin := -size / 2
 
@@ -247,22 +270,23 @@ func _side_length(interior: Rect2i, side: Vector2i) -> int:
 	return interior.size.x if side.y != 0 else interior.size.y
 
 
-## Lays the paddle on the hole's track and puts the ball a little way in
-## front of where it starts.
-func _place_paddle_and_ball(room: Rect2) -> void:
+## Lays the paddle on the hole's track and sits the ball on it, ready to aim.
+func _place_paddle_and_ball() -> void:
 	var outs: Array[Vector2] = []
 	for side in _hole_sides:
 		outs.append(Vector2(side))
 	player.set_track(_track, outs, _start_segment)
 
 	# the ball waits just inside the room in front of the paddle, like an orb
-	# it's holding, and the player shoots it into the room
+	# it's holding, and the player shoots it into the room. (once it knows the
+	# paddle it snaps onto it anyway, this is just a sensible fallback)
 	var out := outs[_start_segment]
-	var ball_pos := player.position - out * (TILE_SIZE / 2.0 + 20)
+	_ball_start = player.position - out * (TILE_SIZE / 2.0 + 20)
 	# never in the wall, even if a huge paddle got pushed along to a corner
-	ball_pos = ball_pos.clamp(room.position + Vector2(12, 12), room.end - Vector2(12, 12))
+	_ball_start = _ball_start.clamp(_room.position + Vector2(12, 12), _room.end - Vector2(12, 12))
+	_ball_direction = -out
 	ball.paddle = player
-	ball.set_start(ball_pos, -out)
+	ball.set_start(_ball_start, _ball_direction)
 
 
 ## Lays a long strip just outside each wall the hole is in, so a ball that
@@ -287,26 +311,31 @@ func _place_death_zone() -> void:
 		collision.position = wall_middle + out * (TILE_SIZE / 2.0 + shape.size.y / 2)
 
 
-## Splits the room (minus the strip in front of the paddle) into a grid of
-## spawn spots and fills a random handful of them. Enemies move about a tile,
-## so the spots beside a filled one are left empty and neighbours can't walk
-## into each other.
-func _spawn_enemies(room: Rect2) -> void:
+## Splits the play zone into a grid of spawn spots and fills a random handful
+## of them, out in the open first: spots by a wall are only used once the open
+## ones run out, then corners. Enemies move about a tile, so the spots beside
+## a filled one are left empty and neighbours can't walk into each other.
+func _spawn_enemies() -> void:
 	if enemy_scenes.is_empty():
 		push_warning("no enemy_scenes set on %s" % name)
 		return
 
-	var zone := _enemy_zone(room)
+	var zone := _play_zone
 	var cols := floori(zone.size.x / enemy_spacing.x)
 	var rows := floori(zone.size.y / enemy_spacing.y)
 	# leftover space gets split evenly on both sides so the grid is centred
 	var margin := (zone.size - Vector2(cols, rows) * enemy_spacing) / 2
 
-	var cells: Array[Vector2i] = []
+	# sorted by how many walls each spot is close to: 0 open, 1 by a wall, 2 corner
+	var by_walls: Array[Array] = [[], [], []]
 	for row in rows:
 		for col in cols:
-			cells.append(Vector2i(col, row))
-	_shuffle(cells)
+			var cell := Vector2i(col, row)
+			by_walls[_walls_near(_cell_position(cell, zone, margin))].append(cell)
+	var cells := []
+	for group in by_walls:
+		_shuffle(group)
+		cells.append_array(group)
 
 	var count := mini(base_enemy_count + enemies_per_level * (LevelManager.level_number - 1), max_enemy_count)
 	# grid cells that are filled, or right beside a filled one
@@ -322,80 +351,92 @@ func _spawn_enemies(room: Rect2) -> void:
 
 		var scene: PackedScene = enemy_scenes[_rng.randi_range(0, enemy_scenes.size() - 1)]
 		var enemy := scene.instantiate()
-		enemy.position = zone.position + margin + (Vector2(cell) + Vector2(0.5, 0.5)) * enemy_spacing
+		enemy.position = _cell_position(cell, zone, margin)
 		# keeps it inside the room and out of the paddle's clearance
 		enemy.move_bounds = zone
 		enemies.add_child(enemy)
 		count -= 1
 
 
-## The room minus the strip in front of the paddle, where enemies can be
-func _enemy_zone(room: Rect2) -> Rect2:
-	# shave the clearance off whichever sides the hole is on
-	return room.grow_individual(
-		-paddle_clearance if Vector2i.LEFT in _hole_sides else 0.0,
-		-paddle_clearance if Vector2i.UP in _hole_sides else 0.0,
-		-paddle_clearance if Vector2i.RIGHT in _hole_sides else 0.0,
-		-paddle_clearance if Vector2i.DOWN in _hole_sides else 0.0)
+# centre of a spawn grid cell, in px
+func _cell_position(cell: Vector2i, zone: Rect2, margin: Vector2) -> Vector2:
+	return zone.position + margin + (Vector2(cell) + Vector2(0.5, 0.5)) * enemy_spacing
 
 
-## Puts the boss up against the wall across from the paddle, in the middle.
-## It slides along that wall on its own. For a corner hole it goes across
-## from the top/bottom part of the hole.
-func _spawn_boss(room: Rect2) -> void:
-	if boss_scene == null:
-		push_warning("no boss_scene set on %s" % name)
-		return
-
-	var zone := _enemy_zone(room)
-	var toward_paddle := Vector2(_hole_sides[0])
-	var boss := boss_scene.instantiate()
-	boss.toward_paddle = toward_paddle
-	boss.move_bounds = zone
-
-	# half the zone's depth (paddle to far wall), minus the boss's half size
-	var depth := absf(toward_paddle.x) * zone.size.x + absf(toward_paddle.y) * zone.size.y
-	var boss_radius := 24.0
-	var back := maxf(depth / 2.0 - boss_radius - boss_wall_gap, 0.0)
-	boss.position = zone.get_center() - toward_paddle * back
-	enemies.add_child(boss)
+# 0 if pos is out in the open, 1 if it's within wall_margin of a side or the
+# top/bottom wall, 2 if it's near both (a corner)
+func _walls_near(pos: Vector2) -> int:
+	var near_side := pos.x - _room.position.x < wall_margin or _room.end.x - pos.x < wall_margin
+	var near_end := pos.y - _room.position.y < wall_margin or _room.end.y - pos.y < wall_margin
+	return int(near_side) + int(near_end)
 
 
-func _spawn_chest(room: Rect2) -> void:
+## Puts a chest somewhere open in the play zone, clear of the walls, the
+## enemies and the balls. It fades itself in. The timer only restarts once
+## it's broken, so there's never more than one out.
+func _spawn_chest() -> void:
 	if chest_scene == null:
 		return
 
-	# Pick an open spot away from the paddle and any enemy spawn points.
-	var bounds := room.grow(-24.0)
+	var bounds := _play_zone.grow(-wall_margin)
+	if not bounds.has_area():
+		# tiny play zone: just stay off the walls
+		bounds = _play_zone.grow(-TILE_SIZE)
 	for attempt in 32:
 		var pos := Vector2(
 			_rng.randf_range(bounds.position.x, bounds.end.x),
 			_rng.randf_range(bounds.position.y, bounds.end.y))
-		if pos.distance_to(player.position) < 56.0:
-			continue
-		var overlaps_enemy := false
-		for enemy in enemies.get_children():
-			if pos.distance_to(enemy.position) < 28.0:
-				overlaps_enemy = true
-				break
-		if overlaps_enemy:
+		if _too_close(pos, enemies.get_children(), 36.0) \
+				or _too_close(pos, get_tree().get_nodes_in_group("balls"), 24.0):
 			continue
 
 		var chest := chest_scene.instantiate()
 		chest.position = pos
-		chest.upgrade_revealed.connect(_on_upgrade_revealed)
+		# deferred: the chest breaks in the middle of a ball's physics step
+		chest.ball_released.connect(_on_chest_broken, CONNECT_DEFERRED)
 		add_child(chest)
 		return
 
+	# nowhere free right now (balls or enemies in the way), try again shortly
+	_chest_timer.start(1.0)
 
-## Gives the ball the chest's upgrade and pops its name up where the chest was.
-## The name floats up and fades, but always stays on screen.
-func _on_upgrade_revealed(upgrade: StringName, at: Vector2) -> void:
-	var message := ball.apply_upgrade(upgrade)
-	ball.flash_upgrade()
 
+# true if any of nodes is closer than distance to pos
+func _too_close(pos: Vector2, nodes: Array, distance: float) -> bool:
+	for node: Node2D in nodes:
+		if pos.distance_to(node.global_position) < distance:
+			return true
+	return false
+
+
+func _on_chest_broken(pos: Vector2) -> void:
+	_release_ball(pos)
+	_popup("Extra ball", pos)
+	_chest_timer.start(chest_interval)
+
+
+## A new ball bursts out of a broken chest at pos, already moving in a random
+## direction, with a flash so you spot it. It never waits on the paddle. If
+## it's ever the last ball left and gets lost, it comes back to the paddle
+## for an aimed shot like the first one.
+func _release_ball(pos: Vector2) -> void:
+	if ball_scene == null:
+		push_warning("no ball_scene set on %s" % name)
+		return
+	var new_ball: Ball = ball_scene.instantiate()
+	add_child(new_ball)
+	# paddle set after it's in the tree, so its own first launch can't grab it
+	new_ball.paddle = player
+	new_ball.set_respawn(_ball_start, _ball_direction)
+	new_ball.release(pos)
+	new_ball.flash_upgrade()
+
+
+## Pops some text up at a spot in the room (global). It floats up and fades,
+## but always stays on screen.
+func _popup(text: String, at: Vector2) -> void:
 	var label := Label.new()
-	label.text = message
+	label.text = text
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.add_theme_font_size_override("font_size", popup_font_size)
 	label.add_theme_color_override("font_color", popup_color)
@@ -406,7 +447,7 @@ func _on_upgrade_revealed(upgrade: StringName, at: Vector2) -> void:
 	add_child(label)
 	label.size = label.get_minimum_size()
 
-	# centred just above the chest, then nudged so all of it, rise included,
+	# centred just above the spot, then nudged so all of it, rise included,
 	# stays inside the screen
 	var screen := Rect2(camera.get_screen_center_position() - get_viewport_rect().size / 2,
 		get_viewport_rect().size).grow(-4.0)
