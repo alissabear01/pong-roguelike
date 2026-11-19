@@ -15,3 +15,6 @@ mono_crash.*.json
 # System
 .DS_Store
 Thumbs.db
+
+# Godot AI addon (local Claude helper, not part of the game)
+addons/godot_ai/
